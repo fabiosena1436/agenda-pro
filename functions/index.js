@@ -1,22 +1,22 @@
-// functions/index.js - VERSÃO FINAL COM SINTAXE MODERNA (V2)
+// functions/index.js
 
-const { onUserCreated } = require("firebase-functions/v2/auth");
-const { getFirestore } = require("firebase-admin/firestore");
-const { logger } = require("firebase-functions");
-const { initializeApp } = require("firebase-admin/app");
+// 1. Importações da nova forma (v2)
+const {onUserCreated} = require("firebase-functions/v2/auth");
+const {initializeApp} = require("firebase-admin/app");
+const {getFirestore, FieldValue} = require("firebase-admin/firestore");
+const logger = require("firebase-functions/logger");
 
+// 2. Inicialização do Admin SDK (continua igual)
 initializeApp();
 
-/**
- * Gatilho que executa toda vez que um novo usuário é criado no Firebase Authentication.
- * Escrito com a sintaxe V2, mais moderna e robusta.
- */
+// 3. Exportação da função com a nova sintaxe onUserCreated()
 exports.onUserCreate = onUserCreated(async (event) => {
-  const user = event.data; // Na v2, os dados do usuário vêm de event.data
+  const user = event.data; // O objeto do usuário agora vem de event.data
+
   logger.info("Novo usuário criado:", user.uid, user.email);
 
-  const db = getFirestore();
-  const businessDocRef = db.collection("businesses").doc(user.uid);
+  // O caminho para o novo documento (agora usando getFirestore())
+  const businessDocRef = getFirestore().collection("businesses").doc(user.uid);
 
   const businessData = {
     ownerUid: user.uid,
@@ -25,13 +25,10 @@ exports.onUserCreate = onUserCreated(async (event) => {
     slug: `negocio-${user.uid.substring(0, 6)}`,
     planId: "free",
     subscriptionStatus: "active",
-    createdAt: new Date(),
+    createdAt: FieldValue.serverTimestamp(), // Usando o FieldValue importado
   };
 
-  try {
-    await businessDocRef.set(businessData);
-    logger.info("Documento do negócio criado para o usuário:", user.uid);
-  } catch (error) {
-    logger.error("Erro ao criar documento do negócio:", error);
-  }
+  await businessDocRef.set(businessData);
+
+  logger.info("Documento do negócio criado para o usuário:", user.uid);
 });
