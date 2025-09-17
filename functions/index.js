@@ -1,5 +1,7 @@
-// Cole este código no arquivo functions/index.js
-const functions = require("firebase-functions");
+// functions/index.js - VERSÃO CORRIGIDA
+
+// MUDANÇA 1: Importamos 'v1' para sermos mais explícitos.
+const v1 = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -7,26 +9,25 @@ admin.initializeApp();
 /**
  * Gatilho que executa toda vez que um novo usuário é criado no Firebase Authentication.
  */
-exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
-  functions.logger.info("Novo usuário criado:", user.uid, user.email);
+// MUDANÇA 2: Usamos v1.auth em vez de functions.auth
+exports.onUserCreate = v1.auth.user().onCreate(async (user) => {
+  // MUDANÇA 3: Usamos v1.logger em vez de functions.logger
+  v1.logger.info("Novo usuário criado:", user.uid, user.email);
 
-  // O caminho para o novo documento na coleção 'businesses'
   const businessDocRef = admin.firestore().collection("businesses").doc(user.uid);
 
-  // Os dados que queremos salvar para o novo negócio
   const businessData = {
     ownerUid: user.uid,
     email: user.email,
-    businessName: "Meu Negócio", // Um nome padrão
-    slug: `negocio-${user.uid.substring(0, 6)}`, // Um slug único padrão
-    planId: "free", // O plano inicial!
+    businessName: "Meu Negócio",
+    slug: `negocio-${user.uid.substring(0, 6)}`,
+    planId: "free",
     subscriptionStatus: "active",
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  // Salva os dados no Firestore
   await businessDocRef.set(businessData);
 
-  functions.logger.info("Documento do negócio criado para o usuário:", user.uid);
+  v1.logger.info("Documento do negócio criado para o usuário:", user.uid);
   return null;
 });
