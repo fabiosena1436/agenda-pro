@@ -1,15 +1,21 @@
-// functions/index.js
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const { MercadoPagoConfig, Preapproval } = require("mercadopago");
+// functions/index.js - VERSÃO FINAL COM SINTAXE MODERNA (V2)
 
-admin.initializeApp();
+const { onUserCreated } = require("firebase-functions/v2/auth");
+const { getFirestore } = require("firebase-admin/firestore");
+const { logger } = require("firebase-functions");
+const { initializeApp } = require("firebase-admin/app");
 
-// Função para criar o documento do negócio ao registrar usuário
-exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
-  functions.logger.info("Novo usuário criado:", user.uid, user.email);
+initializeApp();
 
-  const db = admin.firestore();
+/**
+ * Gatilho que executa toda vez que um novo usuário é criado no Firebase Authentication.
+ * Escrito com a sintaxe V2, mais moderna e robusta.
+ */
+exports.onUserCreate = onUserCreated(async (event) => {
+  const user = event.data; // Na v2, os dados do usuário vêm de event.data
+  logger.info("Novo usuário criado:", user.uid, user.email);
+
+  const db = getFirestore();
   const businessDocRef = db.collection("businesses").doc(user.uid);
 
   const businessData = {
@@ -19,69 +25,13 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
     slug: `negocio-${user.uid.substring(0, 6)}`,
     planId: "free",
     subscriptionStatus: "active",
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: new Date(),
   };
-
-  await businessDocRef.set(businessData);
-
-  functions.logger.info(
-    "Documento do negócio criado para o usuário:",
-    user.uid
-  );
-
-  return null;
-});
-
-// Função HTTPS Callable para criar a assinatura
-exports.createSubscription = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Usuário não autenticado."
-    );
-  }
-
-  const userId = context.auth.uid;
-  const userEmail = context.auth.token.email;
-  const planId = data.planId; // ex: "basic" ou "pro"
-
-  const plans = {
-    basic: { price: 29.9, reason: "Assinatura Plano Básico - AgendaPro" },
-    pro: { price: 49.9, reason: "Assinatura Plano Pro - AgendaPro" },
-  };
-
-  if (!plans[planId]) {
-    throw new functions.https.HttpsError("invalid-argument", "Plano inválido.");
-  }
 
   try {
-    // Pega o access_token configurado no Firebase (via: firebase functions:config:set mercadopago.access_token="SUA_CHAVE")
-    const accessToken = functions.config().mercadopago.access_token;
-
-    const client = new MercadoPagoConfig({ accessToken });
-    const preapprovalClient = new Preapproval(client);
-
-    const response = await preapprovalClient.create({
-      body: {
-        reason: plans[planId].reason,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: "months",
-          transaction_amount: plans[planId].price,
-          currency_id: "BRL",
-        },
-        payer_email: userEmail,
-        back_url: "http://localhost:5173/dashboard/plans", // ajuste no deploy
-        external_reference: userId,
-      },
-    });
-
-    return { init_point: response.init_point };
+    await businessDocRef.set(businessData);
+    logger.info("Documento do negócio criado para o usuário:", user.uid);
   } catch (error) {
-    console.error("Erro ao criar assinatura no Mercado Pago:", error);
-    throw new functions.https.HttpsError(
-      "internal",
-      "Não foi possível criar a assinatura."
-    );
+    logger.error("Erro ao criar documento do negócio:", error);
   }
 });
