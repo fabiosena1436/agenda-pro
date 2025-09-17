@@ -1,12 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageContainer, PlansGrid, PlanCard, PlanFeatures } from './styles';
-import { PLANS } from '../../config/plans'; // Importa nosso "cardápio" de planos
+import { PLANS } from '../../config/plans';
 import Button from '../../components/Button';
-import { useAuth } from '../../contexts/AuthContext'; // Para saber o plano atual do usuário
+import { useAuth } from '../../contexts/AuthContext';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../services/firebaseConfig';
+
 
 export default function PlansPage() {
-  // No futuro, vamos ler o plano do usuário do AuthContext
-  const currentUserPlanId = 'free'; // Por enquanto, fixo para teste
+  const { currentUser } = useAuth();
+  const [currentUserPlanId, setCurrentUserPlanId] = useState('free');
+  const [loadingPlan, setLoadingPlan] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Busca o plano atual do usuário no Firestore
+  useEffect(() => {
+    const fetchUserPlan = async () => {
+      if (currentUser) {
+        const businessDocRef = doc(db, 'businesses', currentUser.uid);
+        const docSnap = await getDoc(businessDocRef);
+        if (docSnap.exists() && docSnap.data().planId) {
+          setCurrentUserPlanId(docSnap.data().planId);
+        }
+      }
+      setLoadingPlan(false);
+    };
+    fetchUserPlan();
+  }, [currentUser]);
+
+  // Função para chamar a Cloud Function e redirecionar
+  const handleUpgrade = async (planId) => {
+    setIsRedirecting(true);
+    try {
+      const functions = getFunctions();
+      const createSubscription = httpsCallable(functions, 'createSubscription');
+      const result = await createSubscription({ planId });
+
+      // Redireciona o usuário para o link de pagamento do Mercado Pago
+      window.location.href = result.data.init_point;
+    } catch (error) {
+      console.error("Erro ao iniciar o processo de assinatura:", error);
+      alert("Não foi possível iniciar a assinatura. Tente novamente.");
+      setIsRedirecting(false);
+    }
+  };
+
+  if (loadingPlan) {
+    return <PageContainer><h1>Carregando seus dados...</h1></PageContainer>;
+  }
 
   return (
     <PageContainer>
@@ -22,8 +64,11 @@ export default function PlansPage() {
                 <li key={index}>✅ {feature}</li>
               ))}
             </PlanFeatures>
-            <Button disabled={currentUserPlanId === plan.id}>
-              {currentUserPlanId === plan.id ? 'Plano Atual' : 'Mudar para este Plano'}
+            <Button 
+              onClick={() => handleUpgrade(plan.id)} 
+              disabled={currentUserPlanId === plan.id || isRedirecting || plan.id === 'free'}
+            >
+              {isRedirecting ? 'Aguarde...' : (currentUserPlanId === plan.id ? 'Plano Atual' : 'Mudar para este Plano')}
             </Button>
           </PlanCard>
         ))}
