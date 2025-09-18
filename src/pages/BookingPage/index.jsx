@@ -1,15 +1,16 @@
+// src/pages/BookingPage/index.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { db } from '../../services/firebaseConfig';
+import { db, functions } from '../../services/firebaseConfig'; // Importar 'functions'
 import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions'; // Importar httpsCallable
 import { PageContainer, Header, BusinessInfo, ServiceList, ServiceCard, TimeSlotsGrid, TimeSlot } from './styles';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import DatePicker from 'react-datepicker';
-import { getDay, startOfDay, endOfDay, addMinutes } from 'date-fns';
-
-const dayMap = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+import { addMinutes } from 'date-fns';
 
 export default function BookingPage() {
   const { slug } = useParams();
@@ -17,7 +18,8 @@ export default function BookingPage() {
   const [businessId, setBusinessId] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [loadingSlots, setLoadingSlots] = useState(false); // Novo estado para carregar slots
+
   // Estados para o fluxo de agendamento no Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -59,52 +61,37 @@ export default function BookingPage() {
     fetchBusinessInfo();
   }, [slug]);
 
-  // Calcula os horários disponíveis
-  const calculateAvailableSlots = useCallback(async () => {
-    if (!selectedService || !selectedDate || !businessData || !businessId) return;
+  // Nova função que chama a Cloud Function
+  const fetchAvailableSlots = useCallback(async () => {
+    if (!selectedService || !selectedDate || !businessId) return;
 
-    const dayOfWeek = dayMap[getDay(selectedDate)];
-    const dayInfo = businessData.workingHours[dayOfWeek];
+    setLoadingSlots(true);
+    setAvailableSlots([]); // Limpa os slots antigos
 
-    if (!dayInfo || !dayInfo.isOpen) {
-      setAvailableSlots([]);
-      return;
+    try {
+      const calculateAvailableSlots = httpsCallable(functions, 'calculateAvailableSlots');
+      const result = await calculateAvailableSlots({
+        businessId: businessId,
+        serviceId: selectedService.id,
+        selectedDate: selectedDate.toISOString(),
+      });
+      // Converte as strings de data de volta para objetos Date
+      const slotsAsDates = result.data.availableSlots.map(slot => new Date(slot));
+      setAvailableSlots(slotsAsDates);
+    } catch (error) {
+      console.error("Erro ao buscar horários:", error);
+      alert("Não foi possível carregar os horários. Tente novamente.");
+    } finally {
+      setLoadingSlots(false);
     }
+  }, [selectedDate, selectedService, businessId]);
 
-    // Busca agendamentos existentes para o dia selecionado
-    const startOfSelectedDay = startOfDay(selectedDate);
-    const endOfSelectedDay = endOfDay(selectedDate);
-    const appointmentsRef = collection(db, 'businesses', businessId, 'appointments');
-    const q = query(appointmentsRef, where('startTime', '>=', startOfSelectedDay), where('startTime', '<=', endOfSelectedDay));
-    const appointmentsSnapshot = await getDocs(q);
-    const bookedTimes = appointmentsSnapshot.docs.map(doc => doc.data().startTime.toDate().getTime());
-
-    const slots = [];
-    const serviceDuration = selectedService.duration;
-    const [startHour, startMinute] = dayInfo.start.split(':').map(Number);
-    const [endHour, endMinute] = dayInfo.end.split(':').map(Number);
-    
-    let currentTime = new Date(selectedDate);
-    currentTime.setHours(startHour, startMinute, 0, 0);
-
-    let endTime = new Date(selectedDate);
-    endTime.setHours(endHour, endMinute, 0, 0);
-
-    while (addMinutes(currentTime, serviceDuration) <= endTime) {
-      // Verifica se o slot já não está agendado
-      if (!bookedTimes.includes(currentTime.getTime())) {
-        slots.push(new Date(currentTime));
-      }
-      currentTime = addMinutes(currentTime, serviceDuration);
-    }
-
-    setAvailableSlots(slots);
-  }, [selectedDate, selectedService, businessData, businessId]);
-  
-  // Roda o cálculo sempre que a data, serviço ou negócio mudarem
+  // Roda a busca de horários sempre que a data ou serviço mudarem
   useEffect(() => {
-    calculateAvailableSlots();
-  }, [calculateAvailableSlots]);
+    if (isModalOpen) {
+      fetchAvailableSlots();
+    }
+  }, [fetchAvailableSlots, isModalOpen]);
 
   const handleSelectService = (service) => {
     setSelectedService(service);
@@ -117,6 +104,7 @@ export default function BookingPage() {
     setSelectedSlot(null);
     setClientName('');
     setClientPhone('');
+    setSelectedDate(new Date()); // Reseta a data
   };
 
   const handleBooking = async (event) => {
@@ -138,7 +126,7 @@ export default function BookingPage() {
       });
       alert('Agendamento confirmado com sucesso!');
       handleCloseModal();
-      calculateAvailableSlots(); // Recalcula os slots para remover o que foi agendado
+      // Não precisa recalcular os slots aqui, pois o modal será fechado.
     } catch (error) {
       console.error("Erro ao confirmar agendamento:", error);
       alert("Não foi possível confirmar o agendamento.");
@@ -147,20 +135,19 @@ export default function BookingPage() {
     }
   };
 
-  if (loading) return <p>Carregando informações do estabelecimento...</p>;
+  if (loading) return <p>A carregar informações do estabelecimento...</p>;
   if (!businessData) return <p>Estabelecimento não encontrado.</p>;
 
   return (
     <PageContainer>
-       <Header bgImage={businessData.bannerUrl}>
-      {/* SE TIVER UM LOGO, MOSTRE-O. SENÃO, MOSTRE O NOME. */}
-      {!businessData.bannerUrl && 'Banner do Estabelecimento'}
-    </Header>
-    <BusinessInfo>
-      {businessData.logoUrl && <img src={businessData.logoUrl} alt="Logo" style={{maxWidth: '150px', maxHeight: '150px', borderRadius: '50%', marginBottom: '10px'}} />}
-      <h1>{businessData.businessName || 'Nome do Estabelecimento'}</h1>
-    </BusinessInfo>
-      <h2>Nossos Serviços</h2>
+      <Header bgImage={businessData.bannerUrl}>
+        {!businessData.bannerUrl && 'Banner do Estabelecimento'}
+      </Header>
+      <BusinessInfo>
+        {businessData.logoUrl && <img src={businessData.logoUrl} alt="Logo" style={{maxWidth: '150px', maxHeight: '150px', borderRadius: '50%', marginBottom: '10px'}} />}
+        <h1>{businessData.businessName || 'Nome do Estabelecimento'}</h1>
+      </BusinessInfo>
+      <h2>Os nossos Serviços</h2>
       <ServiceList>
         {services.map(service => (
           <ServiceCard key={service.id} onClick={() => handleSelectService(service)}>
@@ -175,7 +162,6 @@ export default function BookingPage() {
         <h2>Agendar {selectedService?.name}</h2>
         <hr style={{ margin: '15px 0' }} />
 
-        {/* Passo 2: Formulário de confirmação */}
         {selectedSlot ? (
           <form onSubmit={handleBooking}>
             <h4>Confirmar Agendamento</h4>
@@ -184,22 +170,21 @@ export default function BookingPage() {
             <p><strong>Horário:</strong> {selectedSlot.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
             <br/>
             <Input
-              placeholder="Seu nome completo"
+              placeholder="O seu nome completo"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               required
             />
             <Input
-              placeholder="Seu telefone (WhatsApp)"
+              placeholder="O seu telemóvel (WhatsApp)"
               value={clientPhone}
               onChange={(e) => setClientPhone(e.target.value)}
               required
             />
-            <Button type="submit" disabled={isBooking}>{isBooking ? 'Agendando...' : 'Confirmar Agendamento'}</Button>
+            <Button type="submit" disabled={isBooking}>{isBooking ? 'A agendar...' : 'Confirmar Agendamento'}</Button>
             <Button type="button" danger onClick={() => setSelectedSlot(null)} style={{ marginLeft: '10px' }}>Voltar</Button>
           </form>
         ) : (
-          /* Passo 1: Seleção de data e hora */
           <>
             <p>Selecione uma data:</p>
             <DatePicker
@@ -209,17 +194,21 @@ export default function BookingPage() {
               minDate={new Date()}
             />
             <h3>Horários Disponíveis:</h3>
-            <TimeSlotsGrid>
-              {availableSlots.length > 0 ? (
-                availableSlots.map(slot => (
-                  <TimeSlot key={slot.toISOString()} onClick={() => setSelectedSlot(slot)}>
-                    {slot.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </TimeSlot>
-                ))
-              ) : (
-                <p>Nenhum horário disponível para este dia.</p>
-              )}
-            </TimeSlotsGrid>
+            {loadingSlots ? (
+                <p>A procurar horários...</p>
+            ) : (
+                <TimeSlotsGrid>
+                {availableSlots.length > 0 ? (
+                    availableSlots.map(slot => (
+                    <TimeSlot key={slot.toISOString()} onClick={() => setSelectedSlot(slot)}>
+                        {slot.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </TimeSlot>
+                    ))
+                ) : (
+                    <p>Nenhum horário disponível para este dia.</p>
+                )}
+                </TimeSlotsGrid>
+            )}
           </>
         )}
       </Modal>
