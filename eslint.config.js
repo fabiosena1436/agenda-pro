@@ -5,9 +5,11 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Adicione a pasta 'functions' aqui para ser ignorada
+  globalIgnores(['dist', 'functions/']),
   {
     files: ['**/*.{js,jsx}'],
+    // ... o resto do ficheiro continua igual
     extends: [
       js.configs.recommended,
       reactHooks.configs['recommended-latest'],
