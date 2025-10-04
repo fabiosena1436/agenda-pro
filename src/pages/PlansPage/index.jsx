@@ -14,7 +14,7 @@ export default function PlansPage() {
   const [loadingPlan, setLoadingPlan] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Busca o plano atual do usuário no Firestore
+  // Busca o plano atual do utilizador no Firestore
   useEffect(() => {
     const fetchUserPlan = async () => {
       if (currentUser) {
@@ -37,7 +37,7 @@ export default function PlansPage() {
       const createSubscription = httpsCallable(functions, 'createSubscription');
       const result = await createSubscription({ planId });
 
-      // Redireciona o usuário para o link de pagamento do Mercado Pago
+      // Redireciona o utilizador para o link de pagamento do Mercado Pago
       window.location.href = result.data.init_point;
     } catch (error) {
       console.error("Erro ao iniciar o processo de assinatura:", error);
@@ -47,7 +47,7 @@ export default function PlansPage() {
   };
 
   if (loadingPlan) {
-    return <PageContainer><h1>Carregando seus dados...</h1></PageContainer>;
+    return <PageContainer><h1>A carregar os seus dados...</h1></PageContainer>;
   }
 
   return (

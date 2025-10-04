@@ -10,28 +10,20 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Efeito para buscar os agendamentos em tempo real
   useEffect(() => {
-    // Garante que só vamos buscar dados se o usuário estiver logado
     if (!currentUser) {
       setLoading(false);
       return;
     }
-
-    // 1. Define o caminho para a sub-coleção de agendamentos do usuário logado
     const appointmentsRef = collection(db, 'businesses', currentUser.uid, 'appointments');
-    
-    // 2. Cria uma "query" para ordenar os agendamentos por data, do mais próximo para o mais distante
     const q = query(appointmentsRef, orderBy('startTime', 'asc'));
 
-    // 3. Usa o onSnapshot para ouvir as mudanças em tempo real
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const appointmentsData = snapshot.docs.map(docSnapshot => {
         const data = docSnapshot.data();
         return {
           id: docSnapshot.id,
           ...data,
-          // Converte os Timestamps do Firebase para objetos Date do JavaScript
           startTime: data.startTime.toDate(),
           endTime: data.endTime.toDate(),
         }
@@ -39,17 +31,14 @@ export default function AppointmentsPage() {
       setAppointments(appointmentsData);
       setLoading(false);
     });
-
-    // Limpa o "ouvinte" quando a página for desmontada para evitar vazamento de memória
     return () => unsubscribe();
-  }, [currentUser]); // A dependência [currentUser] garante que o efeito rode novamente se o usuário mudar
+  }, [currentUser]);
 
-  // Função para atualizar o status de um agendamento
   const handleUpdateStatus = async (appointmentId, newStatus) => {
     const confirmationText = newStatus === 'completed' 
-      ? "Tem certeza que deseja marcar este agendamento como concluído?" 
-      : "Tem certeza que deseja cancelar este agendamento?";
-      
+      ? "Tem a certeza que deseja marcar este agendamento como concluído?" 
+      : "Tem a certeza que deseja cancelar este agendamento?";
+
     if (!window.confirm(confirmationText)) return;
 
     try {
@@ -59,13 +48,13 @@ export default function AppointmentsPage() {
       });
       alert('Status do agendamento atualizado com sucesso!');
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
+      console.error("Erro ao atualizar o status:", error);
       alert('Não foi possível atualizar o status.');
     }
   };
 
   if (loading) {
-    return <PageContainer><h2>Carregando agendamentos...</h2></PageContainer>;
+    return <PageContainer><h2>A carregar agendamentos...</h2></PageContainer>;
   }
 
   return (
@@ -87,7 +76,7 @@ export default function AppointmentsPage() {
               <p><strong>Telefone:</strong> {app.clientPhone}</p>
               <p><strong>Status:</strong> <span style={{fontWeight: 'bold'}}>{app.status}</span></p>
 
-              {/* Mostra os botões apenas se o status for 'confirmed' */}
+              {/* CÓDIGO CORRIGIDO E ADICIONADO ABAIXO */}
               {app.status === 'confirmed' && (
                 <CardActions>
                   <Button onClick={() => handleUpdateStatus(app.id, 'completed')}>
