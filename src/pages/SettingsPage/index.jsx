@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { PageContainer, Form, DayRow, DayLabel, TimeInput, UploadSection, ImagePreview } from './styles';
+import { 
+  PageContainer, 
+  Form, 
+  Section,
+  DayRow, 
+  DayLabel, 
+  TimeInput, 
+  UploadSection, 
+  ImagePreview,
+  InputGroup
+} from './styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { db, storage } from '../../services/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Button from '../../components/Button';
+import Input from '../../components/Input'; // Importar o nosso componente de Input
 
+// Valores padrão para um novo negócio
 const defaultWorkingHours = {
   segunda: { isOpen: true, start: '09:00', end: '18:00' },
   terca: { isOpen: true, start: '09:00', end: '18:00' },
@@ -15,13 +27,24 @@ const defaultWorkingHours = {
   sabado: { isOpen: false, start: '09:00', end: '18:00' },
   domingo: { isOpen: false, start: '09:00', end: '18:00' },
 };
+const defaultTheme = {
+  primaryColor: '#007bff',
+  backgroundColor: '#f8f9fa',
+  textColor: '#ffffff',
+};
 const weekDays = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
 
 export default function SettingsPage() {
   const { currentUser } = useAuth();
+  
+  // Estados para todos os dados do negócio
   const [workingHours, setWorkingHours] = useState(defaultWorkingHours);
-  const [businessData, setBusinessData] = useState(null); // Estado para guardar todos os dados do negócio
+  const [address, setAddress] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [theme, setTheme] = useState(defaultTheme);
+  const [businessData, setBusinessData] = useState(null);
 
+  // Efeito para carregar todos os dados do negócio
   useEffect(() => {
     const fetchBusinessData = async () => {
       if (!currentUser) return;
@@ -31,14 +54,16 @@ export default function SettingsPage() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setBusinessData(data);
-        if (data.workingHours) {
-          setWorkingHours(data.workingHours);
-        }
+        setWorkingHours(data.workingHours || defaultWorkingHours);
+        setAddress(data.address || '');
+        setContactPhone(data.contactPhone || '');
+        setTheme(data.theme || defaultTheme);
       }
     };
     fetchBusinessData();
   }, [currentUser]);
 
+  // Funções para atualizar os estados
   const handleHoursChange = (day, field, value) => {
     setWorkingHours(prev => ({
       ...prev,
@@ -46,20 +71,33 @@ export default function SettingsPage() {
     }));
   };
 
-  const handleSaveHours = async (event) => {
+  const handleThemeChange = (color, value) => {
+    setTheme(prev => ({ ...prev, [color]: value }));
+  };
+
+  // Função única para salvar todas as alterações de texto e cores
+  const handleSaveSettings = async (event) => {
     event.preventDefault();
     if (!currentUser) return;
     
     try {
       const businessDocRef = doc(db, 'businesses', currentUser.uid);
-      await setDoc(businessDocRef, { workingHours }, { merge: true });
-      alert('Horários salvos com sucesso!');
+      const dataToSave = {
+        workingHours,
+        address,
+        contactPhone,
+        theme,
+      };
+      
+      await setDoc(businessDocRef, dataToSave, { merge: true });
+      alert('Configurações salvas com sucesso!');
     } catch (error) {
-      console.error("Erro ao salvar horários:", error);
-      alert('Não foi possível salvar os horários.');
+      console.error("Erro ao salvar configurações:", error);
+      alert('Não foi possível salvar as configurações.');
     }
   };
-
+  
+  // Função para upload de imagens (sem alterações)
   const handleImageUpload = async (event, imageType) => {
     const file = event.target.files[0];
     if (!file || !currentUser) return;
@@ -74,7 +112,6 @@ export default function SettingsPage() {
       await setDoc(businessDocRef, { [fieldToUpdate]: downloadURL }, { merge: true });
 
       alert(`Imagem do ${imageType} atualizada com sucesso!`);
-      // Atualiza o estado local para mostrar a prévia imediatamente
       setBusinessData(prev => ({...prev, [fieldToUpdate]: downloadURL}));
     } catch (error) {
       console.error("Erro ao fazer upload da imagem:", error);
@@ -85,41 +122,77 @@ export default function SettingsPage() {
   return (
     <PageContainer>
       <h1>Configurações do Negócio</h1>
-      <br/>
-      <Form onSubmit={handleSaveHours}>
-        <h2>Horário de Funcionamento</h2>
-        {weekDays.map(day => (
-          <DayRow key={day}>
-            <DayLabel htmlFor={`check-${day}`}>{day.charAt(0).toUpperCase() + day.slice(1)}</DayLabel>
-            <input
-              type="checkbox"
-              id={`check-${day}`}
-              checked={workingHours[day]?.isOpen || false}
-              onChange={(e) => handleHoursChange(day, 'isOpen', e.target.checked)}
-            />
-            <label style={{ marginLeft: '5px' }}>{workingHours[day]?.isOpen ? 'Aberto' : 'Fechado'}</label>
+      
+      <Form onSubmit={handleSaveSettings}>
+        <Section>
+          <h2>Horário de Funcionamento</h2>
+          {weekDays.map(day => (
+            <DayRow key={day}>
+              <DayLabel htmlFor={`check-${day}`}>{day.charAt(0).toUpperCase() + day.slice(1)}</DayLabel>
+              <input
+                type="checkbox"
+                id={`check-${day}`}
+                checked={workingHours[day]?.isOpen || false}
+                onChange={(e) => handleHoursChange(day, 'isOpen', e.target.checked)}
+              />
+              <label style={{ marginLeft: '5px' }}>{workingHours[day]?.isOpen ? 'Aberto' : 'Fechado'}</label>
+              <div>
+                <TimeInput
+                  type="time"
+                  value={workingHours[day]?.start || '00:00'}
+                  onChange={(e) => handleHoursChange(day, 'start', e.target.value)}
+                  disabled={!workingHours[day]?.isOpen}
+                />
+                <span>até</span>
+                <TimeInput
+                  type="time"
+                  value={workingHours[day]?.end || '00:00'}
+                  onChange={(e) => handleHoursChange(day, 'end', e.target.value)}
+                  disabled={!workingHours[day]?.isOpen}
+                />
+              </div>
+            </DayRow>
+          ))}
+        </Section>
+
+        <Section>
+          <h2>Dados do Negócio</h2>
+          <Input 
+            placeholder="Endereço do seu estabelecimento"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          <Input 
+            placeholder="Nº de WhatsApp para contacto (ex: 11999998888)"
+            value={contactPhone}
+            onChange={(e) => setContactPhone(e.target.value)}
+          />
+        </Section>
+
+        <Section>
+          <h2>Aparência da Página</h2>
+          <p>Personalize as cores da sua página de agendamento.</p>
+          <InputGroup>
             <div>
-              <TimeInput
-                type="time"
-                value={workingHours[day]?.start || '00:00'}
-                onChange={(e) => handleHoursChange(day, 'start', e.target.value)}
-                disabled={!workingHours[day]?.isOpen}
-              />
-              <span>até</span>
-              <TimeInput
-                type="time"
-                value={workingHours[day]?.end || '00:00'}
-                onChange={(e) => handleHoursChange(day, 'end', e.target.value)}
-                disabled={!workingHours[day]?.isOpen}
-              />
+              <label>Cor Principal (botões, links):</label>
+              <input type="color" value={theme.primaryColor} onChange={(e) => handleThemeChange('primaryColor', e.target.value)} />
             </div>
-          </DayRow>
-        ))}
-        <Button type="submit" style={{ marginTop: '20px' }}>Salvar Horários</Button>
+            <div>
+              <label>Cor do Texto (nos botões):</label>
+              <input type="color" value={theme.textColor} onChange={(e) => handleThemeChange('textColor', e.target.value)} />
+            </div>
+            <div>
+              <label>Cor de Fundo da Página:</label>
+              <input type="color" value={theme.backgroundColor} onChange={(e) => handleThemeChange('backgroundColor', e.target.value)} />
+            </div>
+          </InputGroup>
+        </Section>
+
+        <Button type="submit" style={{ marginTop: '20px', width: '100%' }}>Salvar Alterações</Button>
       </Form>
 
       <UploadSection>
-        <h2>Personalizar Aparência</h2>
+        <h2>Imagens da Marca</h2>
         <div style={{ marginBottom: '20px' }}>
           <h4>Logo do Negócio</h4>
           <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'logo')} />

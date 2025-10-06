@@ -8,8 +8,14 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   body {
-    background-color: #f0f2f5;
-    font-family: 'Helvetica', 'Arial', sans-serif;
-    color: #333;
+    background-color: #f8f9fa; /* Um cinza mais suave que o branco total */
+    font-family: 'Lato', 'Helvetica', sans-serif;
+    color: #212529; /* Um preto mais suave */
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', 'Arial', sans-serif;
+    font-weight: 700;
   }
 `;

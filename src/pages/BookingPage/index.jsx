@@ -1,16 +1,34 @@
-// src/pages/BookingPage/index.jsx
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { db, functions } from '../../services/firebaseConfig';
 import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { PageContainer, Header, BusinessInfo, ServiceList, ServiceCard, TimeSlotsGrid, TimeSlot } from './styles';
+import { ThemeProvider } from 'styled-components';
+import { 
+  PageContainer, 
+  HeaderWrapper, // Changed
+  Header, 
+  BusinessInfo, 
+  ContentWrapper, // New
+  ServiceList, 
+  ServiceCard, 
+  TimeSlotsGrid, 
+  TimeSlot,
+  Footer, // New
+  BookingPageTheme
+} from './styles';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import DatePicker from 'react-datepicker';
 import { addMinutes } from 'date-fns';
+
+const defaultTheme = {
+  primaryColor: '#007bff',
+  backgroundColor: '#f0f2f5',
+  textColor: '#ffffff',
+  hoverColor: '#0056b3'
+};
 
 export default function BookingPage() {
   const { slug } = useParams();
@@ -18,8 +36,8 @@ export default function BookingPage() {
   const [businessId, setBusinessId] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  // ... a lista de estados continua a mesma
   const [loadingSlots, setLoadingSlots] = useState(false);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -28,6 +46,7 @@ export default function BookingPage() {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [isBooking, setIsBooking] = useState(false);
+
 
   useEffect(() => {
     const fetchBusinessInfo = async () => {
@@ -43,7 +62,7 @@ export default function BookingPage() {
         } else {
           const businessDoc = querySnapshot.docs[0];
           setBusinessId(businessDoc.id);
-          setBusinessData(businessDoc.data());
+          setBusinessData({ ...businessDoc.data(), theme: { ...defaultTheme, ...businessDoc.data().theme } });
 
           const servicesRef = collection(db, 'businesses', businessDoc.id, 'services');
           const servicesSnapshot = await getDocs(servicesRef);
@@ -59,21 +78,18 @@ export default function BookingPage() {
     fetchBusinessInfo();
   }, [slug]);
 
+  // As funções fetchAvailableSlots, handleSelectService, handleCloseModal, handleBooking permanecem exatamente as mesmas
   const fetchAvailableSlots = useCallback(async () => {
     if (!selectedService || !selectedDate || !businessId) return;
-
     setLoadingSlots(true);
     setAvailableSlots([]);
-
     try {
-      // CORREÇÃO: Adicionamos a opção de região para garantir a chamada correta
       const calculateAvailableSlots = httpsCallable(functions, 'calculateAvailableSlots', { region: 'us-central1' });
       const result = await calculateAvailableSlots({
         businessId: businessId,
         serviceId: selectedService.id,
         selectedDate: selectedDate.toISOString(),
       });
-      
       const slotsAsDates = result.data.availableSlots.map(slot => new Date(slot));
       setAvailableSlots(slotsAsDates);
     } catch (error) {
@@ -131,30 +147,44 @@ export default function BookingPage() {
     }
   };
 
+
   if (loading) return <p>A carregar informações do estabelecimento...</p>;
   if (!businessData) return <p>Estabelecimento não encontrado.</p>;
 
   return (
-    <PageContainer>
-      <Header bgImage={businessData.bannerUrl}>
-        {!businessData.bannerUrl && 'Banner do Estabelecimento'}
-      </Header>
-      <BusinessInfo>
-        {businessData.logoUrl && <img src={businessData.logoUrl} alt="Logo" style={{maxWidth: '150px', maxHeight: '150px', borderRadius: '50%', marginBottom: '10px'}} />}
-        <h1>{businessData.businessName || 'Nome do Estabelecimento'}</h1>
-      </BusinessInfo>
-      <h2>Os nossos Serviços</h2>
-      <ServiceList>
-        {services.map(service => (
-          <ServiceCard key={service.id} onClick={() => handleSelectService(service)}>
-            <h3>{service.name}</h3>
-            <p>R$ {service.price.toFixed(2)}</p>
-            <p>{service.duration} minutos</p>
-          </ServiceCard>
-        ))}
-      </ServiceList>
+    <ThemeProvider theme={businessData.theme || defaultTheme}>
+      <BookingPageTheme theme={businessData.theme || defaultTheme} />
+        
+      <PageContainer>
+        <HeaderWrapper>
+          <Header bgImage={businessData.bannerUrl} />
+          <BusinessInfo>
+            {businessData.logoUrl && <img src={businessData.logoUrl} alt="Logo" />}
+            <h1>{businessData.businessName || 'Nome do Estabelecimento'}</h1>
+          </BusinessInfo>
+        </HeaderWrapper>
+
+        <ContentWrapper>
+          <h2>Os nossos Serviços</h2>
+          <ServiceList>
+            {services.map(service => (
+              <ServiceCard key={service.id} onClick={() => handleSelectService(service)}>
+                <h3>{service.name}</h3>
+                <p>R$ {service.price.toFixed(2)} | {service.duration} minutos</p>
+              </ServiceCard>
+            ))}
+          </ServiceList>
+        </ContentWrapper>
+      </PageContainer>
+      
+      {/* NOVO: Footer fora do container principal para se estender pela largura */}
+      <Footer>
+        {businessData.address && <p>{businessData.address}</p>}
+        {businessData.contactPhone && <p>Contacto: {businessData.contactPhone}</p>}
+      </Footer>
 
       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+        {/* O conteúdo do Modal permanece o mesmo */}
         <h2>Agendar {selectedService?.name}</h2>
         <hr style={{ margin: '15px 0' }} />
 
@@ -208,6 +238,6 @@ export default function BookingPage() {
           </>
         )}
       </Modal>
-    </PageContainer>
+    </ThemeProvider>
   );
 }
