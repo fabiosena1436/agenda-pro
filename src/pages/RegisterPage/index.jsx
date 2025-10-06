@@ -1,18 +1,20 @@
-import React, { useState } from 'react'; // 1. Importa o useState
+// src/pages/RegisterPage/index.jsx
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // NOVO: Importamos a ferramenta de navegação
 import { PageContainer, FormContainer } from './styles';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import { auth } from '../../services/firebaseConfig'; // 2. Importa a autenticação do Firebase
-import { createUserWithEmailAndPassword } from 'firebase/auth'; // 3. Importa a função de criar utilizador
+import { auth } from '../../services/firebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function RegisterPage() {
-  // 4. Cria "estados" para guardar o email e a senha que o utilizador digita
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate(); // NOVO: Inicializamos a ferramenta de navegação
 
-  // 5. Função que será executada quando o formulário for submetido
   const handleSubmit = async (event) => {
-    event.preventDefault(); // Impede que a página recarregue
+    event.preventDefault();
 
     if (!email || !password) {
       alert('Por favor, preencha todos os campos.');
@@ -20,12 +22,14 @@ export default function RegisterPage() {
     }
 
     try {
-      // 6. Usa a função do Firebase para criar um novo utilizador
       await createUserWithEmailAndPassword(auth, email, password);
-      alert('Utilizador criado com sucesso!');
-      // Aqui, no futuro, podemos redirecionar o utilizador para o painel
+      alert('Utilizador criado com sucesso! A redirecionar para o seu painel...');
+
+      // NOVO: A mágica acontece aqui! Após o sucesso, navegamos para o dashboard.
+      // O Firebase já mantém o utilizador logado automaticamente após o registo.
+      navigate('/dashboard'); 
+
     } catch (error) {
-      // 7. Se der um erro (ex: email já existe, senha fraca), mostra um alerta
       console.error("Erro ao criar utilizador:", error);
       alert(`Ocorreu um erro: ${error.message}`);
     }
@@ -35,17 +39,17 @@ export default function RegisterPage() {
     <PageContainer>
       <h1>Crie a sua Conta</h1>
       <p>É rápido e fácil.</p>
-      <FormContainer onSubmit={handleSubmit}> {/* 8. Liga a função ao formulário */}
+      <FormContainer onSubmit={handleSubmit}>
         <Input
           type="email"
           placeholder="Digite o seu e-mail"
-          value={email} // 9. Liga o input ao estado 'email'
-          onChange={(e) => setEmail(e.target.value)} // Atualiza o estado a cada letra digitada
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
         <Input
           type="password"
           placeholder="Crie uma senha"
-          value={password} // 10. Liga o input ao estado 'password'
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         <Button type="submit">Registar</Button>

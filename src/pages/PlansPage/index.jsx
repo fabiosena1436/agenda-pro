@@ -1,3 +1,5 @@
+// src/pages/PlansPage/index.jsx
+
 import React, { useState, useEffect } from 'react';
 import { PageContainer, PlansGrid, PlanCard, PlanFeatures } from './styles';
 import { PLANS } from '../../config/plans';
@@ -7,14 +9,12 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebaseConfig';
 
-
 export default function PlansPage() {
   const { currentUser } = useAuth();
   const [currentUserPlanId, setCurrentUserPlanId] = useState('free');
   const [loadingPlan, setLoadingPlan] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Busca o plano atual do utilizador no Firestore
   useEffect(() => {
     const fetchUserPlan = async () => {
       if (currentUser) {
@@ -29,15 +29,15 @@ export default function PlansPage() {
     fetchUserPlan();
   }, [currentUser]);
 
-  // Função para chamar a Cloud Function e redirecionar
   const handleUpgrade = async (planId) => {
     setIsRedirecting(true);
     try {
       const functions = getFunctions();
-      const createSubscription = httpsCallable(functions, 'createSubscription');
+      // AJUSTE: Adicionamos a região, por consistência e robustez.
+      const createSubscription = httpsCallable(functions, 'createSubscription', { region: 'us-central1' });
       const result = await createSubscription({ planId });
 
-      // Redireciona o utilizador para o link de pagamento do Mercado Pago
+      // O resultado agora vem dentro de um objeto 'data'
       window.location.href = result.data.init_point;
     } catch (error) {
       console.error("Erro ao iniciar o processo de assinatura:", error);

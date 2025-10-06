@@ -1,11 +1,13 @@
+// src/components/Sidebar/index.jsx
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { SidebarContainer, Logo, NavList, NavItem } from './styles';
 import Button from '../Button';
 import { auth } from '../../services/firebaseConfig';
 import { signOut } from 'firebase/auth';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen }) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -18,9 +20,15 @@ export default function Sidebar() {
   };
 
   return (
-    <SidebarContainer>
-      <Logo>AgendaPro</Logo>
+    <SidebarContainer isOpen={isOpen}>
+      <Link to="/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Logo>AgendaPro</Logo>
+      </Link>
+
       <NavList>
+        <li>
+          <NavItem to="/dashboard" end>Início</NavItem>
+        </li>
         <li>
           <NavItem to="/dashboard/appointments">Agenda</NavItem>
         </li>
@@ -30,7 +38,12 @@ export default function Sidebar() {
         <li>
           <NavItem to="/dashboard/settings">Configurações</NavItem>
         </li>
+        {/* NOVO: Adicionamos o link para a página de Planos e Assinatura */}
+        <li>
+          <NavItem to="/dashboard/plans">Planos e Assinatura</NavItem>
+        </li>
       </NavList>
+
       <Button danger onClick={handleLogout}>Sair</Button>
     </SidebarContainer>
   );

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { db, functions } from '../../services/firebaseConfig'; // Importar 'functions'
+import { db, functions } from '../../services/firebaseConfig';
 import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions'; // Importar httpsCallable
+import { httpsCallable } from 'firebase/functions';
 import { PageContainer, Header, BusinessInfo, ServiceList, ServiceCard, TimeSlotsGrid, TimeSlot } from './styles';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
@@ -18,9 +18,8 @@ export default function BookingPage() {
   const [businessId, setBusinessId] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingSlots, setLoadingSlots] = useState(false); // Novo estado para carregar slots
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Estados para o fluxo de agendamento no Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -30,7 +29,6 @@ export default function BookingPage() {
   const [clientPhone, setClientPhone] = useState('');
   const [isBooking, setIsBooking] = useState(false);
 
-  // Busca inicial dos dados do negócio e serviços
   useEffect(() => {
     const fetchBusinessInfo = async () => {
       if (!slug) return;
@@ -61,21 +59,21 @@ export default function BookingPage() {
     fetchBusinessInfo();
   }, [slug]);
 
-  // Nova função que chama a Cloud Function
   const fetchAvailableSlots = useCallback(async () => {
     if (!selectedService || !selectedDate || !businessId) return;
 
     setLoadingSlots(true);
-    setAvailableSlots([]); // Limpa os slots antigos
+    setAvailableSlots([]);
 
     try {
-      const calculateAvailableSlots = httpsCallable(functions, 'calculateAvailableSlots');
+      // CORREÇÃO: Adicionamos a opção de região para garantir a chamada correta
+      const calculateAvailableSlots = httpsCallable(functions, 'calculateAvailableSlots', { region: 'us-central1' });
       const result = await calculateAvailableSlots({
         businessId: businessId,
         serviceId: selectedService.id,
         selectedDate: selectedDate.toISOString(),
       });
-      // Converte as strings de data de volta para objetos Date
+      
       const slotsAsDates = result.data.availableSlots.map(slot => new Date(slot));
       setAvailableSlots(slotsAsDates);
     } catch (error) {
@@ -86,7 +84,6 @@ export default function BookingPage() {
     }
   }, [selectedDate, selectedService, businessId]);
 
-  // Roda a busca de horários sempre que a data ou serviço mudarem
   useEffect(() => {
     if (isModalOpen) {
       fetchAvailableSlots();
@@ -104,7 +101,7 @@ export default function BookingPage() {
     setSelectedSlot(null);
     setClientName('');
     setClientPhone('');
-    setSelectedDate(new Date()); // Reseta a data
+    setSelectedDate(new Date());
   };
 
   const handleBooking = async (event) => {
@@ -126,7 +123,6 @@ export default function BookingPage() {
       });
       alert('Agendamento confirmado com sucesso!');
       handleCloseModal();
-      // Não precisa recalcular os slots aqui, pois o modal será fechado.
     } catch (error) {
       console.error("Erro ao confirmar agendamento:", error);
       alert("Não foi possível confirmar o agendamento.");
