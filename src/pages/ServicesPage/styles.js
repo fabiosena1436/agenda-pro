@@ -4,6 +4,10 @@ export const PageContainer = styled.div`
   padding: 40px;
   max-width: 800px;
   margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 export const FormSection = styled.div`
@@ -12,6 +16,10 @@ export const FormSection = styled.div`
   border-radius: 8px;
   margin-bottom: 30px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 export const ServicesListSection = styled.div`
@@ -31,6 +39,11 @@ export const ServiceItem = styled.div`
   align-items: center;
   flex-wrap: wrap; // Allows wrapping on smaller screens
   gap: 15px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 export const ServiceInfo = styled.div`

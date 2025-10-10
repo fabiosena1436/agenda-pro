@@ -4,6 +4,10 @@ export const PageContainer = styled.div`
   padding: 40px;
   max-width: 800px;
   margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 export const Form = styled.form`
@@ -11,6 +15,10 @@ export const Form = styled.form`
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 // NOVO: Componente para separar as seções
@@ -43,11 +51,21 @@ export const DayRow = styled.div`
     padding-bottom: 0;
     margin-bottom: 0;
   }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 export const DayLabel = styled.label`
   font-weight: bold;
   width: 120px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    margin-bottom: 10px;
+  }
 `;
 
 export const TimeInput = styled.input`
@@ -56,6 +74,11 @@ export const TimeInput = styled.input`
   border: 1px solid #ccc;
   border-radius: 4px;
   margin: 0 10px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    margin: 0 0 10px 0;
+  }
 `;
 
 // NOVO: Estilo para agrupar os seletores de cores
@@ -81,6 +104,11 @@ export const InputGroup = styled.div`
     cursor: pointer;
     background-color: transparent;
   }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
 `;
 
 
@@ -91,6 +119,10 @@ export const UploadSection = styled(Section)`
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   border-top: 1px solid #eee;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 export const ImagePreview = styled.img`

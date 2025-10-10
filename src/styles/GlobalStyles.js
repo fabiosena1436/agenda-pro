@@ -18,4 +18,20 @@ export const GlobalStyles = createGlobalStyle`
     font-family: 'Montserrat', 'Arial', sans-serif;
     font-weight: 700;
   }
+
+  /* Mobile first approach */
+
+  /* Tablet */
+  @media (min-width: 768px) {
+    body {
+      font-size: 16px;
+    }
+  }
+
+  /* Desktop */
+  @media (min-width: 1024px) {
+    body {
+      font-size: 18px;
+    }
+  }
 `;

@@ -7,6 +7,7 @@ export const PageContainer = styled.div`
   justify-content: center;
   height: 100vh;
   text-align: center;
+  padding: 0 20px;
 `;
 
 // ADICIONE ESTE NOVO BLOCO DE CÓDIGO
@@ -16,4 +17,8 @@ export const FormContainer = styled.form`
   width: 100%;
   max-width: 400px; // Define uma largura máxima para o formulário
   padding: 20px;
+
+  @media (max-width: 480px) {
+    width: 90%;
+  }
 `;

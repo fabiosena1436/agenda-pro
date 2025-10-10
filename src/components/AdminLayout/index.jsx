@@ -8,13 +8,17 @@ export default function AdminLayout() {
   // "Memória" para saber se o menu mobile está aberto ou fechado
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const toggleSidebar = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <LayoutContainer>
       {/* O botão sanduíche só aparece em telas pequenas, mas o colocamos aqui */}
-      <MenuToggle onClick={() => setIsMenuOpen(!isMenuOpen)} />
+      <MenuToggle onClick={toggleSidebar} />
 
       {/* Passamos o estado 'isOpen' para o Sidebar saber se deve aparecer */}
-      <Sidebar isOpen={isMenuOpen} />
+      <Sidebar isOpen={isMenuOpen} toggleSidebar={toggleSidebar} />
 
       <MainContent>
         <Outlet />

@@ -6,6 +6,10 @@ export const PageContainer = styled.div`
   padding: 40px;
   max-width: 900px;
   margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 // NOVO: Caixa que envolve a funcionalidade de partilha de link
@@ -21,6 +25,10 @@ export const LinkShareContainer = styled.div`
   // Adicionado para centralizar a caixa na página
   margin-left: auto;
   margin-right: auto;
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
 `;
 
 // NOVO: O campo que mostra o link de facto

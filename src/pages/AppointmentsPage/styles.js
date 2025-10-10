@@ -4,6 +4,10 @@ export const PageContainer = styled.div`
   padding: 40px;
   max-width: 900px;
   margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 export const AppointmentCard = styled.div`
@@ -29,6 +33,11 @@ export const AppointmentHeader = styled.div`
   h3 {
     margin: 0;
   }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 export const CardActions = styled.div`
@@ -37,4 +46,8 @@ export const CardActions = styled.div`
   border-top: 1px solid #eee;
   display: flex;
   gap: 10px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
 `;
