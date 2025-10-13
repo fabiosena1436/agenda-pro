@@ -112,6 +112,26 @@ export const ServiceCard = styled.div`
   border: 1px solid #e9ecef;
   border-radius: 8px;
   gap: 15px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+`;
+
+export const ServiceImage = styled.img`
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+
+  @media (max-width: 480px) {
+    width: 100%;
+    height: 150px; 
+    margin-right: 0;
+    margin-bottom: 15px;
+  }
 `;
 
 export const ServiceInfo = styled.div`
@@ -191,4 +211,22 @@ export const GalleryImage = styled.img`
   height: 100%;
   object-fit: cover;
   border-radius: 8px;
+`;
+
+export const DatePickerWrapper = styled.div`
+  .react-datepicker {
+    width: 100%;
+    border: none;
+  }
+  .react-datepicker__month-container {
+    width: 100%;
+  }
+  .react-datepicker__day-names,
+  .react-datepicker__week {
+    display: flex;
+    justify-content: space-around;
+  }
+  .react-datepicker__day, .react-datepicker__day-name {
+    margin: 0.5rem;
+  }
 `;

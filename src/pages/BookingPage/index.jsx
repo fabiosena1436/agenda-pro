@@ -7,7 +7,8 @@ import { ThemeProvider } from 'styled-components';
 import { 
   PageContainer, HeaderWrapper, Header, BusinessInfo, ContentWrapper, ServiceList, ServiceCard,
   TimeSlotsGrid, TimeSlot, BookingPageTheme, SocialLinks, TabContainer, TabButton, SearchBar,
-  ServiceInfo, TimeInfo, DetailsContainer, GalleryModalGrid, GalleryImage
+  ServiceInfo, TimeInfo, DetailsContainer, GalleryModalGrid, GalleryImage, ServiceImage,
+  DatePickerWrapper
 } from './styles';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
@@ -191,6 +192,9 @@ export default function BookingPage() {
               <ServiceList>
                 {filteredServices.map(service => (
                   <ServiceCard key={service.id}>
+                    {service.gallery && service.gallery.length > 0 && (
+                      <ServiceImage src={service.gallery[0]} alt={service.name} />
+                    )}
                     <ServiceInfo>
                       <h3>{service.name}</h3>
                       <p>Sob Consulta</p>
@@ -272,12 +276,14 @@ export default function BookingPage() {
         ) : (
           <>
             <p>Selecione uma data:</p>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date) => setSelectedDate(date)}
-              inline
-              minDate={new Date()}
-            />
+            <DatePickerWrapper>
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date) => setSelectedDate(date)}
+                inline
+                minDate={new Date()}
+              />
+            </DatePickerWrapper>
             <h3>Horários Disponíveis:</h3>
             {loadingSlots ? (
                 <p>A procurar horários...</p>
