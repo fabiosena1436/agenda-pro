@@ -1,31 +1,20 @@
 import React, { useState, useEffect } from "react";
 import {
-  PageContainer,
-  FormSection,
-  ServicesListSection,
-  ServiceItem,
-  ServiceInfo,
-  ServiceActions,
-  GalleryGrid,
-  ImageContainer,
-  DeleteButton,
-  UploadLabel
+  PageContainer, FormSection, ServicesListSection, ServiceItem, ServiceInfo, ServiceActions, GalleryGrid, ImageContainer, DeleteButton, UploadLabel
 } from "./styles";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
 import Modal from "../../components/Modal";
-import { db, storage } from "../../services/firebaseConfig";
+import { db, storage, functions } from "../../services/firebaseConfig";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc, getDoc, arrayUnion, arrayRemove
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import imageCompression from 'browser-image-compression'; // NOVO: Importamos a biblioteca
+import { ref, deleteObject, getDownloadURL } from "firebase/storage";
+import imageCompression from 'browser-image-compression';
 
 export default function ServicesPage() {
   const { currentUser } = useAuth();
-
-  // A lista de estados permanece a mesma
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
   const [serviceDuration, setServiceDuration] = useState("");
@@ -36,7 +25,6 @@ export default function ServicesPage() {
   const [selectedServiceForGallery, setSelectedServiceForGallery] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // As funções handleAddService, handleDeleteService, handleUpdateService, useEffect e handleOpenGallery permanecem as mesmas
   const handleAddService = async (event) => {
     event.preventDefault();
     const businessDocRef = doc(db, "businesses", currentUser.uid);
@@ -116,39 +104,60 @@ export default function ServicesPage() {
     setIsGalleryModalOpen(true);
   };
   
-  // --- FUNÇÃO DE UPLOAD MODIFICADA ---
   const handleImageUpload = async (event) => {
-    if (!selectedServiceForGallery) return;
+    if (!selectedServiceForGallery || !currentUser) return;
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
 
     setIsUploading(true);
     const serviceDocRef = doc(db, "businesses", currentUser.uid, "services", selectedServiceForGallery.id);
     
-    // Opções de compressão
     const options = {
-      maxSizeMB: 0.5, // O tamanho máximo do ficheiro em MB (ex: 0.5MB ou 500KB)
-      maxWidthOrHeight: 1920, // A dimensão máxima da imagem
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 1920,
       useWebWorker: true,
     };
 
     try {
+      const idToken = await currentUser.getIdToken();
+
       for (const file of files) {
-        console.log(`Original size: ${file.size / 1024 / 1024} MB`);
-        
-        // Comprime a imagem
         const compressedFile = await imageCompression(file, options);
-        console.log(`Compressed size: ${compressedFile.size / 1024 / 1024} MB`);
         
         const imageId = `${Date.now()}-${compressedFile.name}`;
-        const storageRef = ref(storage, `businesses/${currentUser.uid}/services/${selectedServiceForGallery.id}/${imageId}`);
-        
-        // Faz o upload do ficheiro comprimido
-        await uploadBytes(storageRef, compressedFile);
-        const downloadURL = await getDownloadURL(storageRef);
+        const filePath = `businesses/${currentUser.uid}/services/${selectedServiceForGallery.id}/${imageId}`;
 
+        const result = await fetch('https://us-central1-agendapro-web.cloudfunctions.net/generateUploadUrl', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            data: {
+              filePath: filePath,
+              contentType: compressedFile.type
+            }
+          })
+        });
+
+        if (!result.ok) {
+          throw new Error('Falha ao obter a URL de upload.');
+        }
+
+        const { data } = await result.json();
+        const { signedUrl } = data;
+
+        await fetch(signedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': compressedFile.type },
+            body: compressedFile,
+        });
+
+        const storageRef = ref(storage, filePath);
+        const downloadURL = await getDownloadURL(storageRef);
         await updateDoc(serviceDocRef, {
-          gallery: arrayUnion(downloadURL)
+            gallery: arrayUnion(downloadURL)
         });
       }
       alert("Imagens adicionadas com sucesso!");
@@ -160,19 +169,15 @@ export default function ServicesPage() {
     }
   };
   
-  // A função handleImageDelete permanece a mesma
   const handleImageDelete = async (imageUrl) => {
     if (!selectedServiceForGallery || !window.confirm("Tem certeza que deseja apagar esta imagem?")) return;
-    
     try {
       const serviceDocRef = doc(db, "businesses", currentUser.uid, "services", selectedServiceForGallery.id);
       await updateDoc(serviceDocRef, {
         gallery: arrayRemove(imageUrl)
       });
-
       const imageRef = ref(storage, imageUrl);
       await deleteObject(imageRef);
-
       alert("Imagem apagada com sucesso!");
     } catch (error) {
       console.error("Erro ao apagar imagem:", error);
@@ -180,8 +185,6 @@ export default function ServicesPage() {
     }
   };
 
-
-  // O JSX (return) permanece o mesmo da Etapa 4
   return (
     <PageContainer>
       <FormSection>
