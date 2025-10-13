@@ -1,26 +1,32 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { db, functions } from '../../services/firebaseConfig';
 import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { ThemeProvider } from 'styled-components';
 import { 
-  PageContainer, HeaderWrapper, Header, BusinessInfo, ContentWrapper, ServiceList, 
-  ServiceCard, TimeSlotsGrid, TimeSlot, Footer, BookingPageTheme,
-  GalleryModalGrid, GalleryImage,
-  ServiceImage, ServiceContent // Novos imports
+  PageContainer, HeaderWrapper, Header, BusinessInfo, ContentWrapper, ServiceList, ServiceCard,
+  TimeSlotsGrid, TimeSlot, BookingPageTheme, SocialLinks, TabContainer, TabButton, SearchBar,
+  ServiceInfo, TimeInfo, DetailsContainer, GalleryModalGrid, GalleryImage
 } from './styles';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import DatePicker from 'react-datepicker';
 import { addMinutes } from 'date-fns';
+import { FaWhatsapp, FaInstagram } from 'react-icons/fa';
+import { FiClock } from 'react-icons/fi';
 
 const defaultTheme = {
-  primaryColor: '#007bff',
-  backgroundColor: '#f0f2f5',
+  primaryColor: '#db8e8e',
+  backgroundColor: '#fdf7f7',
   textColor: '#ffffff',
-  hoverColor: '#0056b3'
+  hoverColor: '#c97a7a'
+};
+
+const weekDaysMap = {
+  segunda: 'Segunda-feira', terca: 'Terça-feira', quarta: 'Quarta-feira', 
+  quinta: 'Quinta-feira', sexta: 'Sexta-feira', sabado: 'Sábado', domingo: 'Domingo'
 };
 
 export default function BookingPage() {
@@ -40,9 +46,8 @@ export default function BookingPage() {
   const [clientPhone, setClientPhone] = useState('');
   const [isBooking, setIsBooking] = useState(false);
 
-  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-  const [galleryImages, setGalleryImages] = useState([]);
-  const [galleryTitle, setGalleryTitle] = useState('');
+  const [activeTab, setActiveTab] = useState('servicos');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchBusinessInfo = async () => {
@@ -73,6 +78,13 @@ export default function BookingPage() {
     };
     fetchBusinessInfo();
   }, [slug]);
+
+  const filteredServices = useMemo(() => {
+    if (!searchTerm) return services;
+    return services.filter(service => 
+      service.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [services, searchTerm]);
 
   const fetchAvailableSlots = useCallback(async () => {
     if (!selectedService || !selectedDate || !businessId) return;
@@ -142,64 +154,96 @@ export default function BookingPage() {
     }
   };
 
-  const handleOpenGalleryModal = (service) => {
-    if (service.gallery && service.gallery.length > 0) {
-      setGalleryImages(service.gallery);
-      setGalleryTitle(service.name);
-      setIsGalleryModalOpen(true);
-    } else {
-      alert("Este serviço ainda não tem fotos na galeria.");
-    }
-  };
-
-  if (loading) return <p>A carregar informações do estabelecimento...</p>;
+  if (loading) return <p>A carregar...</p>;
   if (!businessData) return <p>Estabelecimento não encontrado.</p>;
-
-  // URL de uma imagem placeholder para serviços sem galeria
-  const placeholderImage = "https://via.placeholder.com/300x200.png/E9ECEF/6C757D?text=Servi%C3%A7o";
+  
+  const theme = { ...defaultTheme, ...businessData.theme };
 
   return (
-    <ThemeProvider theme={businessData.theme || defaultTheme}>
-      <BookingPageTheme theme={businessData.theme || defaultTheme} />
+    <ThemeProvider theme={theme}>
+      <BookingPageTheme theme={theme} />
       <PageContainer>
         <HeaderWrapper>
           <Header bgImage={businessData.bannerUrl} />
           <BusinessInfo>
             {businessData.logoUrl && <img src={businessData.logoUrl} alt="Logo" />}
-            <h1>{businessData.businessName || 'Nome do Estabelecimento'}</h1>
           </BusinessInfo>
+          <SocialLinks theme={theme}>
+            {businessData.whatsappLink && <a href={businessData.whatsappLink} target="_blank" rel="noopener noreferrer"><FaWhatsapp /></a>}
+            {businessData.instagramUrl && <a href={businessData.instagramUrl} target="_blank" rel="noopener noreferrer"><FaInstagram /></a>}
+          </SocialLinks>
         </HeaderWrapper>
 
+        <TabContainer>
+          <TabButton theme={theme} active={activeTab === 'servicos'} onClick={() => setActiveTab('servicos')}>Serviços</TabButton>
+          <TabButton theme={theme} active={activeTab === 'detalhes'} onClick={() => setActiveTab('detalhes')}>Detalhes</TabButton>
+        </TabContainer>
+
         <ContentWrapper>
-          <h2>Os nossos Serviços</h2>
-          <ServiceList>
-            {services.map(service => (
-              <ServiceCard key={service.id}>
-                <ServiceImage 
-                  src={(service.gallery && service.gallery.length > 0) ? service.gallery[0] : placeholderImage} 
-                  alt={service.name} 
-                />
-                <ServiceContent>
-                  <h3>{service.name}</h3>
-                  <p>R$ {service.price.toFixed(2)} | {service.duration} minutos</p>
-                  <div>
+          {activeTab === 'servicos' && (
+            <>
+              <SearchBar 
+                theme={theme}
+                placeholder="Pesquisar serviços..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <ServiceList>
+                {filteredServices.map(service => (
+                  <ServiceCard key={service.id}>
+                    <ServiceInfo>
+                      <h3>{service.name}</h3>
+                      <p>Sob Consulta</p>
+                    </ServiceInfo>
+                    <TimeInfo><FiClock /> {service.duration}min</TimeInfo>
                     <Button onClick={() => handleOpenBookingModal(service)}>Agendar</Button>
-                    {service.gallery && service.gallery.length > 0 && (
-                      <Button onClick={() => handleOpenGalleryModal(service)} style={{backgroundColor: '#6c757d'}}>Galeria</Button>
-                    )}
-                  </div>
-                </ServiceContent>
-              </ServiceCard>
-            ))}
-          </ServiceList>
+                  </ServiceCard>
+                ))}
+              </ServiceList>
+            </>
+          )}
+
+          {activeTab === 'detalhes' && (
+            <DetailsContainer>
+              {businessData.aboutDescription && (
+                <>
+                  <h3>Sobre Nós</h3>
+                  <p>{businessData.aboutDescription}</p>
+                  <br/>
+                </>
+              )}
+              
+              {businessData.aboutGallery && businessData.aboutGallery.length > 0 && (
+                <>
+                  <h3>Nossa Galeria</h3>
+                  <GalleryModalGrid>
+                    {businessData.aboutGallery.map(url => (
+                      <GalleryImage key={url} src={url} alt="Foto da loja" />
+                    ))}
+                  </GalleryModalGrid>
+                  <br/>
+                </>
+              )}
+
+              <h3>Endereço</h3>
+              <p>{businessData.address || 'Endereço não informado.'}</p>
+              <br/>
+
+              <h3>Horário de Funcionamento</h3>
+              {businessData.workingHours ? (
+                <ul>
+                  {Object.entries(businessData.workingHours).map(([day, hours]) => (
+                    <li key={day}>
+                      <strong>{weekDaysMap[day]}:</strong> {hours.isOpen ? `${hours.start} - ${hours.end}` : 'Fechado'}
+                    </li>
+                  ))}
+                </ul>
+              ) : <p>Horários não informados.</p>}
+            </DetailsContainer>
+          )}
         </ContentWrapper>
       </PageContainer>
       
-      <Footer>
-        {businessData.address && <p>{businessData.address}</p>}
-        {businessData.contactPhone && <p>Contacto: {businessData.contactPhone}</p>}
-      </Footer>
-
       <Modal isOpen={isBookingModalOpen} onClose={handleCloseBookingModal}>
         <h2>Agendar {selectedService?.name}</h2>
         <hr style={{ margin: '15px 0' }} />
@@ -253,16 +297,6 @@ export default function BookingPage() {
           </>
         )}
       </Modal>
-
-      <Modal isOpen={isGalleryModalOpen} onClose={() => setIsGalleryModalOpen(false)}>
-        <h2>Galeria de "{galleryTitle}"</h2>
-        <GalleryModalGrid>
-          {galleryImages.map(url => (
-            <GalleryImage key={url} src={url} alt={`Foto do serviço ${galleryTitle}`} />
-          ))}
-        </GalleryModalGrid>
-      </Modal>
-
     </ThemeProvider>
   );
 }

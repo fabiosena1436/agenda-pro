@@ -9,28 +9,29 @@ export const BookingPageTheme = createGlobalStyle`
 
 export const PageContainer = styled.div`
   max-width: 800px;
-  margin: 40px auto;
+  margin: 0 auto;
   background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
 `;
 
 export const HeaderWrapper = styled.div`
   position: relative;
   text-align: center;
+  padding-bottom: 20px;
+  background-color: #fff;
 `;
 
 export const Header = styled.header`
   background-image: url(${props => props.bgImage || 'https://via.placeholder.com/800x200.png/6c757d/FFFFFF?Text=Banner'});
   background-size: cover;
   background-position: center;
-  height: 220px;
+  height: 200px;
   background-color: #6c757d;
 `;
 
 export const BusinessInfo = styled.div`
   margin-top: -75px; 
+  position: relative;
+  z-index: 2;
 
   img {
     width: 150px;
@@ -40,89 +41,122 @@ export const BusinessInfo = styled.div`
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     object-fit: cover;
   }
+`;
 
-  h1 {
-    margin-top: 10px;
-    font-size: 2.5rem;
-    color: #343a40;
+export const SocialLinks = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 15px;
+
+  a {
+    font-size: 36px;
+    color: #495057;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: ${props => props.theme.primaryColor || '#007bff'};
+    }
   }
 `;
 
+export const TabContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  border-bottom: 1px solid #dee2e6;
+  margin: 0;
+  background-color: #fff;
+`;
+
+export const TabButton = styled.button`
+  padding: 15px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  color: ${props => props.active ? props.theme.primaryColor : '#6c757d'};
+  border-bottom: 3px solid ${props => props.active ? props.theme.primaryColor : 'transparent'};
+  transition: all 0.2s ease-in-out;
+`;
+
 export const ContentWrapper = styled.div`
-  padding: 30px;
-  
-  h2 {
-    text-align: center;
-    margin-bottom: 25px;
-    font-size: 1.8rem;
-    color: #495057;
+  padding: 20px;
+  background-color: #fff;
+`;
+
+export const SearchBar = styled.input`
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 25px;
+  margin-bottom: 25px;
+  outline: none;
+
+  &:focus {
+    border-color: ${props => props.theme.primaryColor};
   }
 `;
 
 export const ServiceList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 `;
 
-// --- ServiceCard TOTALMENTE REDESENHADO ---
 export const ServiceCard = styled.div`
-  background-color: #fff;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Garante que a imagem respeite as bordas arredondadas */
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-export const ServiceImage = styled.img`
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  background-color: #f8f9fa; /* Cor de fundo para placeholders */
-`;
-
-export const ServiceContent = styled.div`
+  align-items: center;
   padding: 15px;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1; /* Faz esta área crescer para empurrar os botões para baixo */
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  gap: 15px;
+`;
+
+export const ServiceInfo = styled.div`
+  flex-grow: 1;
 
   h3 {
-    color: ${props => props.theme.primaryColor || '#007bff'};
-    margin-bottom: 8px;
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
+    color: #343a40;
   }
-
-  p {
-    color: #6c757d;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-  }
-
-  div {
-    margin-top: auto; /* A mágica acontece aqui: empurra os botões para o fundo */
-    display: flex;
-    gap: 10px;
-  }
-`;
-
-
-export const Footer = styled.footer`
-  background-color: #343a40;
-  color: #f8f9fa;
-  text-align: center;
-  padding: 25px;
-  margin-top: 30px;
 
   p {
     margin: 0;
-    line-height: 1.7;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+`;
+
+export const TimeInfo = styled.p`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #6c757d;
+  font-size: 0.9rem;
+`;
+
+export const DetailsContainer = styled.div`
+  padding: 20px;
+  line-height: 1.7;
+
+  h3 {
+    font-size: 1.2rem;
+    color: #343a40;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  li {
+    margin-bottom: 8px;
   }
 `;
 
@@ -140,28 +174,21 @@ export const TimeSlot = styled.button`
   color: ${props => props.theme.primaryColor || '#007bff'};
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
   font-weight: bold;
-
-  &:hover, &:focus {
-    background-color: ${props => props.theme.primaryColor || '#007bff'};
-    color: ${props => props.theme.textColor || '#fff'};
-    outline: none;
-  }
 `;
 
 export const GalleryModalGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-  max-height: 70vh;
-  overflow-y: auto;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
   margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
 `;
 
 export const GalleryImage = styled.img`
   width: 100%;
-  height: 200px;
+  height: 100%;
   object-fit: cover;
   border-radius: 8px;
 `;

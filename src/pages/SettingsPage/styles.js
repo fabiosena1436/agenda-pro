@@ -4,10 +4,6 @@ export const PageContainer = styled.div`
   padding: 40px;
   max-width: 800px;
   margin: 0 auto;
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
 `;
 
 export const Form = styled.form`
@@ -15,13 +11,8 @@ export const Form = styled.form`
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
 `;
 
-// NOVO: Componente para separar as seções
 export const Section = styled.section`
   margin-bottom: 30px;
   padding-bottom: 30px;
@@ -38,6 +29,25 @@ export const Section = styled.section`
   }
 `;
 
+// NOVO: Estilo para o campo de texto da descrição
+export const StyledTextArea = styled.textarea`
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  transition: border-color 0.2s ease-in-out;
+  font-family: 'Lato', 'Helvetica', sans-serif;
+  resize: vertical;
+
+  &:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+`;
+
 export const DayRow = styled.div`
   display: flex;
   align-items: center;
@@ -51,21 +61,11 @@ export const DayRow = styled.div`
     padding-bottom: 0;
     margin-bottom: 0;
   }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 `;
 
 export const DayLabel = styled.label`
   font-weight: bold;
   width: 120px;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    margin-bottom: 10px;
-  }
 `;
 
 export const TimeInput = styled.input`
@@ -74,14 +74,8 @@ export const TimeInput = styled.input`
   border: 1px solid #ccc;
   border-radius: 4px;
   margin: 0 10px;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    margin: 0 0 10px 0;
-  }
 `;
 
-// NOVO: Estilo para agrupar os seletores de cores
 export const InputGroup = styled.div`
   display: flex;
   justify-content: space-around;
@@ -104,13 +98,7 @@ export const InputGroup = styled.div`
     cursor: pointer;
     background-color: transparent;
   }
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-  }
 `;
-
 
 export const UploadSection = styled(Section)`
   margin-top: 30px;
@@ -119,10 +107,6 @@ export const UploadSection = styled(Section)`
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   border-top: 1px solid #eee;
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
 `;
 
 export const ImagePreview = styled.img`
