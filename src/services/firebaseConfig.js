@@ -1,27 +1,23 @@
-// src/services/firebaseConfig.js
-
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { getFunctions } from "firebase/functions"; // Importar getFunctions
 
-// Your web app's Firebase configuration using Environment Variables
+// Objeto de configuração agora lê as variáveis de ambiente
+// import.meta.env é a forma como o Vite nos dá acesso a elas
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_API_KEY,
-  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Export services to be used elsewhere in your app
-export const db = getFirestore(app);
+// Initialize and export Firebase services
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const functions = getFunctions(app); // Exportar functions
