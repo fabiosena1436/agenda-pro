@@ -1,6 +1,5 @@
 import styled, { createGlobalStyle } from 'styled-components';
 
-// Global styles for this page to control the body background
 export const BookingPageTheme = createGlobalStyle`
   body {
     background-color: ${props => props.theme.backgroundColor || '#f0f2f5'};
@@ -8,34 +7,29 @@ export const BookingPageTheme = createGlobalStyle`
   }
 `;
 
-// Main container for the entire page content
 export const PageContainer = styled.div`
   max-width: 800px;
   margin: 40px auto;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  overflow: hidden; /* Important for keeping rounded corners with the banner */
+  overflow: hidden;
 `;
 
-// A new wrapper for the Header and BusinessInfo to allow overlapping
 export const HeaderWrapper = styled.div`
   position: relative;
   text-align: center;
 `;
 
-// The banner image
 export const Header = styled.header`
   background-image: url(${props => props.bgImage || 'https://via.placeholder.com/800x200.png/6c757d/FFFFFF?Text=Banner'});
   background-size: cover;
   background-position: center;
   height: 220px;
-  background-color: #6c757d; // A fallback color
+  background-color: #6c757d;
 `;
 
-// The section with Logo and Business Name
 export const BusinessInfo = styled.div`
-  /* This is the magic for overlapping the logo */
   margin-top: -75px; 
 
   img {
@@ -54,7 +48,6 @@ export const BusinessInfo = styled.div`
   }
 `;
 
-// A new wrapper for the services list and title
 export const ContentWrapper = styled.div`
   padding: 30px;
   
@@ -72,18 +65,34 @@ export const ServiceList = styled.div`
   gap: 25px;
 `;
 
+// --- ServiceCard TOTALMENTE REDESENHADO ---
 export const ServiceCard = styled.div`
   background-color: #fff;
-  padding: 20px;
   border-radius: 8px;
   border: 1px solid #e9ecef;
-  cursor: pointer;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Garante que a imagem respeite as bordas arredondadas */
 
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
   }
+`;
+
+export const ServiceImage = styled.img`
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background-color: #f8f9fa; /* Cor de fundo para placeholders */
+`;
+
+export const ServiceContent = styled.div`
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Faz esta área crescer para empurrar os botões para baixo */
 
   h3 {
     color: ${props => props.theme.primaryColor || '#007bff'};
@@ -93,10 +102,17 @@ export const ServiceCard = styled.div`
   p {
     color: #6c757d;
     font-size: 0.9rem;
+    margin-bottom: 15px;
+  }
+
+  div {
+    margin-top: auto; /* A mágica acontece aqui: empurra os botões para o fundo */
+    display: flex;
+    gap: 10px;
   }
 `;
 
-// A new Footer component
+
 export const Footer = styled.footer`
   background-color: #343a40;
   color: #f8f9fa;
@@ -110,7 +126,6 @@ export const Footer = styled.footer`
   }
 `;
 
-// Styles for the modal content (no major changes needed)
 export const TimeSlotsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -133,4 +148,20 @@ export const TimeSlot = styled.button`
     color: ${props => props.theme.textColor || '#fff'};
     outline: none;
   }
+`;
+
+export const GalleryModalGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+  margin-top: 20px;
+`;
+
+export const GalleryImage = styled.img`
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
 `;

@@ -7,6 +7,7 @@ import Button from "../../components/Button";
 import Modal from "../../components/Modal";
 import { db, storage, functions } from "../../services/firebaseConfig";
 import { useAuth } from "../../contexts/AuthContext";
+import { httpsCallable } from "firebase/functions";
 import {
   collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc, getDoc, arrayUnion, arrayRemove
 } from "firebase/firestore";

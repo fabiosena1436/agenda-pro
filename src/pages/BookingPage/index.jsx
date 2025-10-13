@@ -5,17 +5,10 @@ import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/f
 import { httpsCallable } from 'firebase/functions';
 import { ThemeProvider } from 'styled-components';
 import { 
-  PageContainer, 
-  HeaderWrapper, // Changed
-  Header, 
-  BusinessInfo, 
-  ContentWrapper, // New
-  ServiceList, 
-  ServiceCard, 
-  TimeSlotsGrid, 
-  TimeSlot,
-  Footer, // New
-  BookingPageTheme
+  PageContainer, HeaderWrapper, Header, BusinessInfo, ContentWrapper, ServiceList, 
+  ServiceCard, TimeSlotsGrid, TimeSlot, Footer, BookingPageTheme,
+  GalleryModalGrid, GalleryImage,
+  ServiceImage, ServiceContent // Novos imports
 } from './styles';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
@@ -36,10 +29,10 @@ export default function BookingPage() {
   const [businessId, setBusinessId] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  // ... a lista de estados continua a mesma
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -47,6 +40,9 @@ export default function BookingPage() {
   const [clientPhone, setClientPhone] = useState('');
   const [isBooking, setIsBooking] = useState(false);
 
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [galleryTitle, setGalleryTitle] = useState('');
 
   useEffect(() => {
     const fetchBusinessInfo = async () => {
@@ -78,7 +74,6 @@ export default function BookingPage() {
     fetchBusinessInfo();
   }, [slug]);
 
-  // As funções fetchAvailableSlots, handleSelectService, handleCloseModal, handleBooking permanecem exatamente as mesmas
   const fetchAvailableSlots = useCallback(async () => {
     if (!selectedService || !selectedDate || !businessId) return;
     setLoadingSlots(true);
@@ -101,18 +96,18 @@ export default function BookingPage() {
   }, [selectedDate, selectedService, businessId]);
 
   useEffect(() => {
-    if (isModalOpen) {
+    if (isBookingModalOpen) {
       fetchAvailableSlots();
     }
-  }, [fetchAvailableSlots, isModalOpen]);
+  }, [fetchAvailableSlots, isBookingModalOpen]);
 
-  const handleSelectService = (service) => {
+  const handleOpenBookingModal = (service) => {
     setSelectedService(service);
-    setIsModalOpen(true);
+    setIsBookingModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseBookingModal = () => {
+    setIsBookingModalOpen(false);
     setSelectedService(null);
     setSelectedSlot(null);
     setClientName('');
@@ -138,7 +133,7 @@ export default function BookingPage() {
         status: 'confirmed',
       });
       alert('Agendamento confirmado com sucesso!');
-      handleCloseModal();
+      handleCloseBookingModal();
     } catch (error) {
       console.error("Erro ao confirmar agendamento:", error);
       alert("Não foi possível confirmar o agendamento.");
@@ -147,14 +142,25 @@ export default function BookingPage() {
     }
   };
 
+  const handleOpenGalleryModal = (service) => {
+    if (service.gallery && service.gallery.length > 0) {
+      setGalleryImages(service.gallery);
+      setGalleryTitle(service.name);
+      setIsGalleryModalOpen(true);
+    } else {
+      alert("Este serviço ainda não tem fotos na galeria.");
+    }
+  };
 
   if (loading) return <p>A carregar informações do estabelecimento...</p>;
   if (!businessData) return <p>Estabelecimento não encontrado.</p>;
 
+  // URL de uma imagem placeholder para serviços sem galeria
+  const placeholderImage = "https://via.placeholder.com/300x200.png/E9ECEF/6C757D?text=Servi%C3%A7o";
+
   return (
     <ThemeProvider theme={businessData.theme || defaultTheme}>
       <BookingPageTheme theme={businessData.theme || defaultTheme} />
-        
       <PageContainer>
         <HeaderWrapper>
           <Header bgImage={businessData.bannerUrl} />
@@ -168,26 +174,35 @@ export default function BookingPage() {
           <h2>Os nossos Serviços</h2>
           <ServiceList>
             {services.map(service => (
-              <ServiceCard key={service.id} onClick={() => handleSelectService(service)}>
-                <h3>{service.name}</h3>
-                <p>R$ {service.price.toFixed(2)} | {service.duration} minutos</p>
+              <ServiceCard key={service.id}>
+                <ServiceImage 
+                  src={(service.gallery && service.gallery.length > 0) ? service.gallery[0] : placeholderImage} 
+                  alt={service.name} 
+                />
+                <ServiceContent>
+                  <h3>{service.name}</h3>
+                  <p>R$ {service.price.toFixed(2)} | {service.duration} minutos</p>
+                  <div>
+                    <Button onClick={() => handleOpenBookingModal(service)}>Agendar</Button>
+                    {service.gallery && service.gallery.length > 0 && (
+                      <Button onClick={() => handleOpenGalleryModal(service)} style={{backgroundColor: '#6c757d'}}>Galeria</Button>
+                    )}
+                  </div>
+                </ServiceContent>
               </ServiceCard>
             ))}
           </ServiceList>
         </ContentWrapper>
       </PageContainer>
       
-      {/* NOVO: Footer fora do container principal para se estender pela largura */}
       <Footer>
         {businessData.address && <p>{businessData.address}</p>}
         {businessData.contactPhone && <p>Contacto: {businessData.contactPhone}</p>}
       </Footer>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        {/* O conteúdo do Modal permanece o mesmo */}
+      <Modal isOpen={isBookingModalOpen} onClose={handleCloseBookingModal}>
         <h2>Agendar {selectedService?.name}</h2>
         <hr style={{ margin: '15px 0' }} />
-
         {selectedSlot ? (
           <form onSubmit={handleBooking}>
             <h4>Confirmar Agendamento</h4>
@@ -238,6 +253,16 @@ export default function BookingPage() {
           </>
         )}
       </Modal>
+
+      <Modal isOpen={isGalleryModalOpen} onClose={() => setIsGalleryModalOpen(false)}>
+        <h2>Galeria de "{galleryTitle}"</h2>
+        <GalleryModalGrid>
+          {galleryImages.map(url => (
+            <GalleryImage key={url} src={url} alt={`Foto do serviço ${galleryTitle}`} />
+          ))}
+        </GalleryModalGrid>
+      </Modal>
+
     </ThemeProvider>
   );
 }
