@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import {
   PageContainer, FormSection, ServicesListSection, ServiceItem, ServiceInfo, ServiceActions, GalleryGrid, ImageContainer, DeleteButton, UploadLabel
 } from "./styles";
@@ -34,12 +35,12 @@ export default function ServicesPage() {
       const businessData = docSnap.data();
       const planId = businessData.planId || 'free';
       if (planId === 'free' && services.length >= 10) {
-        alert("Você atingiu o limite de 10 serviços para o Plano Grátis. Faça um upgrade para adicionar mais!");
+        toast.warn("Você atingiu o limite de 10 serviços para o Plano Grátis. Faça um upgrade para adicionar mais!");
         return;
       }
     }
     if (!serviceName || !servicePrice || !serviceDuration) {
-      return alert("Por favor, preencha todos os campos.");
+      return toast.warn("Por favor, preencha todos os campos.");
     }
     try {
       const servicesCollectionRef = collection(db, "businesses", currentUser.uid, "services");
@@ -49,11 +50,11 @@ export default function ServicesPage() {
         duration: parseInt(serviceDuration),
         gallery: [],
       });
-      alert("Serviço adicionado com sucesso!");
+      toast.success("Serviço adicionado com sucesso!");
       setServiceName(""); setServicePrice(""); setServiceDuration("");
     } catch (error) {
       console.error("Erro ao adicionar serviço:", error);
-      alert("Não foi possível adicionar o serviço.");
+      toast.error("Não foi possível adicionar o serviço.");
     }
   };
 
@@ -62,10 +63,10 @@ export default function ServicesPage() {
     try {
       const serviceDocRef = doc(db, "businesses", currentUser.uid, "services", serviceId);
       await deleteDoc(serviceDocRef);
-      alert("Serviço apagado com sucesso!");
+      toast.success("Serviço apagado com sucesso!");
     } catch (error) {
       console.error("Erro ao apagar serviço:", error);
-      alert("Não foi possível apagar o serviço.");
+      toast.error("Não foi possível apagar o serviço.");
     }
   };
 
@@ -80,12 +81,12 @@ export default function ServicesPage() {
         price: parseFloat(price.value),
         duration: parseInt(duration.value),
       });
-      alert("Serviço atualizado com sucesso!");
+      toast.success("Serviço atualizado com sucesso!");
       setIsEditModalOpen(false);
       setEditingService(null);
     } catch (error) {
       console.error("Erro ao atualizar serviço:", error);
-      alert("Não foi possível atualizar o serviço.");
+      toast.error("Não foi possível atualizar o serviço.");
     }
   };
 
@@ -161,10 +162,10 @@ export default function ServicesPage() {
             gallery: arrayUnion(downloadURL)
         });
       }
-      alert("Imagens adicionadas com sucesso!");
+      toast.success("Imagens adicionadas com sucesso!");
     } catch (error) {
       console.error("Erro ao fazer upload de imagens:", error);
-      alert("Ocorreu um erro ao enviar as imagens.");
+      toast.error("Ocorreu um erro ao enviar as imagens.");
     } finally {
       setIsUploading(false);
     }
@@ -179,10 +180,10 @@ export default function ServicesPage() {
       });
       const imageRef = ref(storage, imageUrl);
       await deleteObject(imageRef);
-      alert("Imagem apagada com sucesso!");
+      toast.success("Imagem apagada com sucesso!");
     } catch (error) {
       console.error("Erro ao apagar imagem:", error);
-      alert("Não foi possível apagar a imagem.");
+      toast.error("Não foi possível apagar a imagem.");
     }
   };
 

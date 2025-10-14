@@ -1,6 +1,7 @@
 // src/pages/RegisterPage/index.jsx
 
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom'; // NOVO: Importamos a ferramenta de navegação
 import { PageContainer, FormContainer } from './styles';
 import Input from '../../components/Input';
@@ -17,13 +18,13 @@ export default function RegisterPage() {
     event.preventDefault();
 
     if (!email || !password) {
-      alert('Por favor, preencha todos os campos.');
+      toast.warn('Por favor, preencha todos os campos.');
       return;
     }
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      alert('Utilizador criado com sucesso! A redirecionar para o seu painel...');
+      toast.success('Utilizador criado com sucesso! A redirecionar para o seu painel...');
 
       // NOVO: A mágica acontece aqui! Após o sucesso, navegamos para o dashboard.
       // O Firebase já mantém o utilizador logado automaticamente após o registo.
@@ -31,7 +32,7 @@ export default function RegisterPage() {
 
     } catch (error) {
       console.error("Erro ao criar utilizador:", error);
-      alert(`Ocorreu um erro: ${error.message}`);
+      toast.error(`Ocorreu um erro: ${error.message}`);
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom'; // <-- Novidade! Para redirecionar o utilizador
 import { PageContainer, FormContainer } from './styles'; // Reutilizamos os mesmos estilos
 import Input from '../../components/Input';
@@ -15,19 +16,19 @@ export default function LoginPage() {
     event.preventDefault();
 
     if (!email || !password) {
-      alert('Por favor, preencha todos os campos.');
+      toast.warn('Por favor, preencha todos os campos.');
       return;
     }
 
     try {
       // Usamos a função do Firebase para fazer o login
       await signInWithEmailAndPassword(auth, email, password);
-      alert('Login bem-sucedido!');
+      toast.success('Login bem-sucedido!');
       navigate('/dashboard'); // <-- Redireciona para o painel após o login
     } catch (error) {
       // Trata erros comuns de login
       console.error("Erro ao fazer login:", error);
-      alert(`Ocorreu um erro: ${error.message}`);
+      toast.error(`Ocorreu um erro: ${error.message}`);
     }
   };
 

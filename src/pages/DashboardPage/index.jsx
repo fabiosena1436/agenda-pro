@@ -1,6 +1,7 @@
 // src/pages/DashboardPage/index.jsx
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 // NOVO: Importamos os nossos novos componentes de estilo
@@ -53,7 +54,7 @@ export default function DashboardPage() {
       setTimeout(() => setCopyButtonText('Copiar'), 2000);
     }).catch(err => {
       console.error('Erro ao copiar link: ', err);
-      alert('Não foi possível copiar o link.');
+      toast.error('Não foi possível copiar o link.');
     });
   };
 

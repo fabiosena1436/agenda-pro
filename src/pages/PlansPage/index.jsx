@@ -1,6 +1,7 @@
 // src/pages/PlansPage/index.jsx
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { PageContainer, PlansGrid, PlanCard, PlanFeatures } from './styles';
 import { PLANS } from '../../config/plans';
 import Button from '../../components/Button';
@@ -41,7 +42,7 @@ export default function PlansPage() {
       window.location.href = result.data.init_point;
     } catch (error) {
       console.error("Erro ao iniciar o processo de assinatura:", error);
-      alert("Não foi possível iniciar a assinatura. Tente novamente.");
+      toast.error("Não foi possível iniciar a assinatura. Tente novamente.");
       setIsRedirecting(false);
     }
   };

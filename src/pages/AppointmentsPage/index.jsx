@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { PageContainer, AppointmentCard, AppointmentHeader, CardActions } from './styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../services/firebaseConfig';
@@ -46,10 +47,10 @@ export default function AppointmentsPage() {
       await updateDoc(appointmentDocRef, {
         status: newStatus,
       });
-      alert('Status do agendamento atualizado com sucesso!');
+      toast.success('Status do agendamento atualizado com sucesso!');
     } catch (error) {
       console.error("Erro ao atualizar o status:", error);
-      alert('Não foi possível atualizar o status.');
+      toast.error('Não foi possível atualizar o status.');
     }
   };
 
