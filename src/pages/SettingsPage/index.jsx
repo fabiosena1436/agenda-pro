@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  PageContainer, Form, Section, DayRow, DayLabel, TimeInput, UploadSection, ImagePreview, InputGroup, StyledTextArea
+  PageContainer, Form, Section, DayRow, DayLabel, TimeInput, UploadSection, ImagePreview, InputGroup, StyledTextArea,
+  BlockedTimeCard, BlockedTimeHeader, BlockedTimeActions,
+  IntervalsContainer, IntervalRow, AddButton, RemoveButton
 } from './styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { db, storage } from '../../services/firebaseConfig';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, collection, onSnapshot, addDoc, deleteDoc, Timestamp, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { GalleryGrid, ImageContainer, DeleteButton, UploadLabel } from '../ServicesPage/styles';
 import imageCompression from 'browser-image-compression';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 const defaultWorkingHours = {
-  segunda: { isOpen: true, start: '09:00', end: '18:00' },
-  terca: { isOpen: true, start: '09:00', end: '18:00' },
-  quarta: { isOpen: true, start: '09:00', end: '18:00' },
-  quinta: { isOpen: true, start: '09:00', end: '18:00' },
-  sexta: { isOpen: true, start: '09:00', end: '18:00' },
-  sabado: { isOpen: false, start: '09:00', end: '18:00' },
-  domingo: { isOpen: false, start: '09:00', end: '18:00' },
+  segunda: { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  terca: { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  quarta: { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  quinta: { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  sexta: { isOpen: true, intervals: [{ start: '09:00', end: '18:00' }] },
+  sabado: { isOpen: false, intervals: [] },
+  domingo: { isOpen: false, intervals: [] },
 };
+
 const defaultTheme = {
   primaryColor: '#007bff',
   backgroundColor: '#f8f9fa',
@@ -40,17 +45,28 @@ export default function SettingsPage() {
   const [aboutDescription, setAboutDescription] = useState('');
   const [aboutGallery, setAboutGallery] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [blockDate, setBlockDate] = useState(new Date());
+  const [blockStartTime, setBlockStartTime] = useState('');
+  const [blockEndTime, setBlockEndTime] = useState('');
+  const [blockedTimes, setBlockedTimes] = useState([]);
+  const [blockReason, setBlockReason] = useState('');
 
   useEffect(() => {
+    if (!currentUser) return;
+    
     const fetchBusinessData = async () => {
-      if (!currentUser) return;
       const businessDocRef = doc(db, 'businesses', currentUser.uid);
       const docSnap = await getDoc(businessDocRef);
-
       if (docSnap.exists()) {
         const data = docSnap.data();
         setBusinessData(data);
-        setWorkingHours(data.workingHours || defaultWorkingHours);
+        const loadedHours = data.workingHours || defaultWorkingHours;
+        Object.keys(loadedHours).forEach(day => {
+          if (!loadedHours[day].intervals) {
+            loadedHours[day].intervals = loadedHours[day].start ? [{start: loadedHours[day].start, end: loadedHours[day].end}] : [];
+          }
+        });
+        setWorkingHours(loadedHours);
         setAddress(data.address || '');
         setContactPhone(data.contactPhone || '');
         setTheme(data.theme || defaultTheme);
@@ -61,6 +77,21 @@ export default function SettingsPage() {
       }
     };
     fetchBusinessData();
+
+    const blockagesCollectionRef = collection(db, 'businesses', currentUser.uid, 'blockages');
+    const q = query(blockagesCollectionRef, orderBy('startTime', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const blockagesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        startTime: doc.data().startTime.toDate(),
+        endTime: doc.data().endTime.toDate(),
+      }));
+      setBlockedTimes(blockagesData);
+    });
+
+    return () => unsubscribe();
+
   }, [currentUser]);
   
   const handleHoursChange = (day, field, value) => {
@@ -68,6 +99,24 @@ export default function SettingsPage() {
       ...prev,
       [day]: { ...prev[day], [field]: value },
     }));
+  };
+
+  const handleIntervalChange = (day, index, field, value) => {
+    const newWorkingHours = { ...workingHours };
+    newWorkingHours[day].intervals[index][field] = value;
+    setWorkingHours(newWorkingHours);
+  };
+
+  const addInterval = (day) => {
+    const newWorkingHours = { ...workingHours };
+    newWorkingHours[day].intervals.push({ start: '09:00', end: '18:00' });
+    setWorkingHours(newWorkingHours);
+  };
+
+  const removeInterval = (day, index) => {
+    const newWorkingHours = { ...workingHours };
+    newWorkingHours[day].intervals.splice(index, 1);
+    setWorkingHours(newWorkingHours);
   };
 
   const handleThemeChange = (color, value) => {
@@ -138,7 +187,6 @@ export default function SettingsPage() {
           aboutGallery: arrayUnion(downloadURL)
         });
         
-        // Atualiza o estado local para exibir a imagem imediatamente
         setAboutGallery(prev => [...prev, downloadURL]);
       }
       alert("Imagens adicionadas à galeria da loja!");
@@ -160,12 +208,59 @@ export default function SettingsPage() {
       const imageRef = ref(storage, imageUrl);
       await deleteObject(imageRef);
       
-      // Atualiza o estado local para remover a imagem imediatamente
       setAboutGallery(prev => prev.filter(url => url !== imageUrl));
       alert("Imagem apagada com sucesso!");
     } catch (error) {
       console.error("Erro ao apagar imagem:", error);
       alert("Não foi possível apagar a imagem.");
+    }
+  };
+
+  const handleAddBlockage = async (e) => {
+    e.preventDefault();
+    if (!blockDate || !blockStartTime || !blockEndTime) {
+      return alert("Por favor, preencha a data e os horários de início e fim.");
+    }
+
+    const [startH, startM] = blockStartTime.split(':').map(Number);
+    const [endH, endM] = blockEndTime.split(':').map(Number);
+
+    const startTime = new Date(blockDate);
+    startTime.setHours(startH, startM, 0, 0);
+
+    const endTime = new Date(blockDate);
+    endTime.setHours(endH, endM, 0, 0);
+
+    if (startTime >= endTime) {
+      return alert("O horário de início deve ser anterior ao horário de fim.");
+    }
+    
+    try {
+      const blockagesCollectionRef = collection(db, "businesses", currentUser.uid, "blockages");
+      await addDoc(blockagesCollectionRef, {
+        startTime: Timestamp.fromDate(startTime),
+        endTime: Timestamp.fromDate(endTime),
+        reason: blockReason || 'Horário Bloqueado',
+      });
+      alert("Horário bloqueado com sucesso!");
+      setBlockStartTime('');
+      setBlockEndTime('');
+      setBlockReason('');
+    } catch (error) {
+      console.error("Erro ao bloquear horário:", error);
+      alert("Não foi possível bloquear o horário.");
+    }
+  };
+
+  const handleDeleteBlockage = async (blockageId) => {
+    if (!window.confirm("Tem certeza que deseja remover este bloqueio?")) return;
+    try {
+      const blockageDocRef = doc(db, "businesses", currentUser.uid, "blockages", blockageId);
+      await deleteDoc(blockageDocRef);
+      alert("Bloqueio removido com sucesso!");
+    } catch (error) {
+      console.error("Erro ao remover bloqueio:", error);
+      alert("Não foi possível remover o bloqueio.");
     }
   };
 
@@ -178,29 +273,41 @@ export default function SettingsPage() {
           <h2>Horário de Funcionamento</h2>
           {weekDays.map(day => (
             <DayRow key={day}>
-              <DayLabel htmlFor={`check-${day}`}>{day.charAt(0).toUpperCase() + day.slice(1)}</DayLabel>
-              <input
-                type="checkbox"
-                id={`check-${day}`}
-                checked={workingHours[day]?.isOpen || false}
-                onChange={(e) => handleHoursChange(day, 'isOpen', e.target.checked)}
-              />
-              <label style={{ marginLeft: '5px' }}>{workingHours[day]?.isOpen ? 'Aberto' : 'Fechado'}</label>
-              <div>
-                <TimeInput
-                  type="time"
-                  value={workingHours[day]?.start || '00:00'}
-                  onChange={(e) => handleHoursChange(day, 'start', e.target.value)}
-                  disabled={!workingHours[day]?.isOpen}
-                />
-                <span>até</span>
-                <TimeInput
-                  type="time"
-                  value={workingHours[day]?.end || '00:00'}
-                  onChange={(e) => handleHoursChange(day, 'end', e.target.value)}
-                  disabled={!workingHours[day]?.isOpen}
+              <div style={{display: 'flex', alignItems: 'center', width: '150px'}}>
+                <DayLabel htmlFor={`check-${day}`}>{day.charAt(0).toUpperCase() + day.slice(1)}</DayLabel>
+                <input
+                  type="checkbox"
+                  id={`check-${day}`}
+                  checked={workingHours[day]?.isOpen || false}
+                  onChange={(e) => handleHoursChange(day, 'isOpen', e.target.checked)}
                 />
               </div>
+              
+              <IntervalsContainer>
+                {workingHours[day]?.isOpen ? (
+                  <>
+                    {workingHours[day].intervals && workingHours[day].intervals.map((interval, index) => (
+                      <IntervalRow key={index}>
+                        <TimeInput
+                          type="time"
+                          value={interval.start}
+                          onChange={(e) => handleIntervalChange(day, index, 'start', e.target.value)}
+                        />
+                        <span>até</span>
+                        <TimeInput
+                          type="time"
+                          value={interval.end}
+                          onChange={(e) => handleIntervalChange(day, index, 'end', e.target.value)}
+                        />
+                        <RemoveButton type="button" onClick={() => removeInterval(day, index)}>–</RemoveButton>
+                      </IntervalRow>
+                    ))}
+                    <AddButton type="button" onClick={() => addInterval(day)}>+ Adicionar intervalo</AddButton>
+                  </>
+                ) : (
+                   <span>Fechado</span>
+                )}
+              </IntervalsContainer>
             </DayRow>
           ))}
         </Section>
@@ -213,7 +320,7 @@ export default function SettingsPage() {
             onChange={(e) => setAddress(e.target.value)}
           />
           <Input 
-            placeholder="Nº de telefone para contacto (ex: 11999998888)"
+            placeholder="Nº de telefone para contacto (ex: 5511999998888)"
             value={contactPhone}
             onChange={(e) => setContactPhone(e.target.value)}
           />
@@ -250,6 +357,42 @@ export default function SettingsPage() {
 
         <Button type="submit" style={{ marginTop: '20px', width: '100%' }}>Salvar Alterações</Button>
       </Form>
+
+      <Section style={{marginTop: '30px', backgroundColor: '#fff', padding: '30px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)'}}>
+        <h2>Bloquear Horários na Agenda</h2>
+        <p>Adicione bloqueios para compromissos únicos.</p>
+        <Form onSubmit={handleAddBlockage}>
+            <div style={{display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap'}}>
+              <DatePicker selected={blockDate} onChange={(date) => setBlockDate(date)} dateFormat="dd/MM/yyyy" />
+              <TimeInput type="time" value={blockStartTime} onChange={e => setBlockStartTime(e.target.value)} required />
+              <span>até</span>
+              <TimeInput type="time" value={blockEndTime} onChange={e => setBlockEndTime(e.target.value)} required />
+              <Input placeholder="Motivo (opcional)" value={blockReason} onChange={e => setBlockReason(e.target.value)} style={{flex: 1, marginBottom: 0}} />
+            </div>
+            <Button type="submit" style={{marginTop: '20px'}}>Bloquear Horário</Button>
+        </Form>
+        <hr style={{margin: '30px 0'}}/>
+        <h3>Horários Bloqueados</h3>
+        {blockedTimes.length > 0 ? (
+          blockedTimes.map(block => (
+            <BlockedTimeCard key={block.id}>
+              <BlockedTimeHeader>
+                <strong>{block.reason}</strong>
+                <span>{block.startTime.toLocaleDateString('pt-BR')}</span>
+              </BlockedTimeHeader>
+              <p>
+                Das {block.startTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} 
+                às {block.endTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+              </p>
+              <BlockedTimeActions>
+                <Button danger onClick={() => handleDeleteBlockage(block.id)}>Remover</Button>
+              </BlockedTimeActions>
+            </BlockedTimeCard>
+          ))
+        ) : (
+          <p>Nenhum horário bloqueado.</p>
+        )}
+      </Section>
 
       <UploadSection>
         <h2>Sobre o seu Negócio</h2>

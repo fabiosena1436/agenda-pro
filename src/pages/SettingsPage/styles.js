@@ -29,7 +29,6 @@ export const Section = styled.section`
   }
 `;
 
-// NOVO: Estilo para o campo de texto da descrição
 export const StyledTextArea = styled.textarea`
   width: 100%;
   min-height: 120px;
@@ -55,6 +54,7 @@ export const DayRow = styled.div`
   margin-bottom: 15px;
   padding-bottom: 15px;
   border-bottom: 1px solid #f0f0f0;
+  flex-wrap: wrap;
 
   &:last-child {
     border-bottom: none;
@@ -65,7 +65,7 @@ export const DayRow = styled.div`
 
 export const DayLabel = styled.label`
   font-weight: bold;
-  width: 120px;
+  width: 100px;
 `;
 
 export const TimeInput = styled.input`
@@ -73,7 +73,6 @@ export const TimeInput = styled.input`
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  margin: 0 10px;
 `;
 
 export const InputGroup = styled.div`
@@ -115,4 +114,72 @@ export const ImagePreview = styled.img`
   margin-top: 10px;
   border-radius: 8px;
   border: 1px solid #ddd;
+`;
+
+export const BlockedTimeCard = styled.div`
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+`;
+
+export const BlockedTimeHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+`;
+
+export const BlockedTimeActions = styled.div`
+  margin-top: 10px;
+  text-align: right;
+`;
+
+export const IntervalsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+`;
+
+export const IntervalRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+export const AddButton = styled.button`
+  background: none;
+  border: 1px dashed #007bff;
+  color: #007bff;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 5px;
+
+  &:hover {
+    background: #e7f3ff;
+  }
+`;
+
+export const RemoveButton = styled.button`
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #f1b0b7;
+  }
 `;

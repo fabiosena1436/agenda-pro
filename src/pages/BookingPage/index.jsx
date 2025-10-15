@@ -71,6 +71,11 @@ export default function BookingPage() {
   const [activeTab, setActiveTab] = useState('servicos');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const cleanPhoneNumber = (phone) => {
+    if (!phone) return '';
+    return phone.replace(/\D/g, '');
+  };
+
   useEffect(() => {
     const fetchBusinessInfo = async () => {
       if (!slug) return;
@@ -113,7 +118,7 @@ export default function BookingPage() {
     setLoadingSlots(true);
     setAvailableSlots([]);
     try {
-      const calculateAvailableSlots = httpsCallable(functions, 'calculateAvailableSlots', { region: 'us-central1' });
+      const calculateAvailableSlots = httpsCallable(functions, 'calculateAvailableSlots');
       const result = await calculateAvailableSlots({
         businessId: businessId,
         serviceId: selectedService.id,
@@ -170,12 +175,14 @@ export default function BookingPage() {
         startTime: Timestamp.fromDate(selectedSlot),
         endTime: Timestamp.fromDate(addMinutes(selectedSlot, selectedService.duration)),
         status: 'confirmed',
+        duration: selectedService.duration // Salva a duração para uso futuro no reagendamento
       });
       
       setBookingDetails({
         id: docRef.id,
         serviceName: selectedService.name,
-        date: selectedSlot.toLocaleDateString(),
+        clientName: clientName,
+        date: selectedSlot.toLocaleDateString('pt-BR'),
         time: selectedSlot.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
       
@@ -193,6 +200,16 @@ export default function BookingPage() {
   if (loading) return <p>A carregar...</p>;
   if (!businessData) return <p>Estabelecimento não encontrado.</p>;
   
+  const whatsAppNumber = businessData?.contactPhone ? cleanPhoneNumber(businessData.contactPhone) : '';
+  const whatsAppMessage = bookingDetails ? encodeURIComponent(
+    `Olá! Acabei de confirmar meu agendamento.\n\n` +
+    `*Serviço:* ${bookingDetails.serviceName}\n` +
+    `*Cliente:* ${bookingDetails.clientName}\n` +
+    `*Data:* ${bookingDetails.date}\n` +
+    `*Hora:* ${bookingDetails.time}`
+  ) : '';
+  const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=${whatsAppMessage}`;
+
   return (
     <PageContainer>
       <HeaderWrapper>
@@ -281,9 +298,11 @@ export default function BookingPage() {
             <h3>Horário de Funcionamento</h3>
             {businessData.workingHours ? (
               <ul>
-                {Object.entries(businessData.workingHours).map(([day, hours]) => (
+                {Object.entries(businessData.workingHours).map(([day, config]) => (
                   <li key={day}>
-                    <strong>{weekDaysMap[day]}:</strong> {hours.isOpen ? `${hours.start} - ${hours.end}` : 'Fechado'}
+                    <strong>{weekDaysMap[day]}:</strong> {config.isOpen ? 
+                        (config.intervals.map(i => `${i.start} - ${i.end}`).join(' | ')) 
+                        : 'Fechado'}
                   </li>
                 ))}
               </ul>
@@ -398,15 +417,23 @@ export default function BookingPage() {
                     </DetailItem>
                   </BookingDetails>
                 )}
+
+                {whatsAppNumber && (
+                    <a href={whatsAppLink} target="_blank" rel="noopener noreferrer" style={{textDecoration: 'none'}}>
+                        <Button style={{marginTop: '1.5rem', width: '100%', backgroundColor: '#25D366'}}>
+                            <FaWhatsapp style={{marginRight: '8px'}}/> Notificar no WhatsApp
+                        </Button>
+                    </a>
+                )}
+                
                 <ButtonGroup>
-                    <Button style={{marginTop: '1.5rem'}} className='primary' onClick={handleCloseConfirmation}>Fechar</Button>
+                    <Button style={{marginTop: '1rem', width: '100%'}} className='secondary' onClick={handleCloseConfirmation}>Fechar</Button>
                 </ButtonGroup>
               </ConfirmationCard>
             </ConfirmationWrapper>
           </Modal>
         )}
       </AnimatePresence>
-
     </PageContainer>
   );
 }
