@@ -14,15 +14,19 @@ export const ModalBackdrop = styled(Box)({
   zIndex: 1000,
 });
 
-export const ModalContent = styled(Box)(({ theme }) => ({
+export const ModalContent = styled(Box)(({ theme, size }) => ({
   backgroundColor: theme.palette.background.paper,
-  padding: theme.spacing(4),
+  padding: size === 'large' ? 0 : theme.spacing(4),
   borderRadius: theme.shape.borderRadius,
   boxShadow: theme.shadows[5],
-  width: '100%',
-  maxWidth: '500px',
+  width: 'auto',
+  maxWidth: size === 'large' ? '95vw' : '500px',
+  maxHeight: size === 'large' ? '95vh' : 'auto',
   [theme.breakpoints.down('sm')]: {
     margin: theme.spacing(2),
-    padding: theme.spacing(2),
+    padding: size === 'large' ? 0 : theme.spacing(2),
+  },
+  '& .image-gallery-content.fullscreen': {
+    backgroundColor: 'black',
   },
 }));

@@ -8,6 +8,7 @@ import Modal from '../../components/Modal';
 import DatePicker from 'react-datepicker';
 import { addMinutes } from 'date-fns';
 import { FaWhatsapp, FaInstagram, FaCheck } from 'react-icons/fa';
+import ImageGallery from 'react-image-gallery'; // << NOVO: Componente da galeria
 import { FiClock } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -41,7 +42,8 @@ import {
   ConfirmationHeader,
   ConfirmationMessage,
   BookingDetails,
-  DetailItem
+  DetailItem,
+  DetailCtaButton
 } from './styles';
 
 const weekDaysMap = {
@@ -70,6 +72,18 @@ export default function BookingPage() {
 
   const [activeTab, setActiveTab] = useState('servicos');
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
+
+  const handleOpenLightbox = (index) => {
+    setLightboxStartIndex(index);
+    setIsLightboxOpen(true);
+  };
+
+  const handleCloseLightbox = () => {
+    setIsLightboxOpen(false);
+  };
 
   const cleanPhoneNumber = (phone) => {
     if (!phone) return '';
@@ -112,6 +126,16 @@ export default function BookingPage() {
       service.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [services, searchTerm]);
+
+  const galleryImages = useMemo(() => {
+    if (!businessData?.aboutGallery || businessData.aboutGallery.length === 0) return [];
+    return businessData.aboutGallery.map(url => ({
+      original: url,
+      thumbnail: url,
+      originalAlt: businessData.name || 'Galeria de Fotos do Negócio',
+      thumbnailAlt: 'Miniatura da Galeria',
+    }));
+  }, [businessData]);
 
   const fetchAvailableSlots = useCallback(async () => {
     if (!selectedService || !selectedDate || !businessId) return;
@@ -279,17 +303,26 @@ export default function BookingPage() {
               </>
             )}
             
-            {businessData.aboutGallery && businessData.aboutGallery.length > 0 && (
+            {galleryImages.length > 0 && (
               <>
                 <h3>Nossa Galeria</h3>
                 <GalleryModalGrid>
-                  {businessData.aboutGallery.map(url => (
-                    <GalleryImage key={url} src={url} alt="Foto da loja" />
+                  {galleryImages.map((image, index) => (
+                    <GalleryImage
+                      key={image.original}
+                      src={image.thumbnail}
+                      alt={image.thumbnailAlt}
+                      onClick={() => handleOpenLightbox(index)}
+                    />
                   ))}
                 </GalleryModalGrid>
                 <br/>
               </>
             )}
+
+            <DetailCtaButton className="primary" onClick={() => setActiveTab('servicos')}>
+                Agendar Horário
+            </DetailCtaButton>
 
             <h3>Endereço</h3>
             <p>{businessData.address || 'Endereço não informado.'}</p>
@@ -434,6 +467,23 @@ export default function BookingPage() {
           </Modal>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <Modal isOpen={isLightboxOpen} onClose={handleCloseLightbox} size="large">
+            <ImageGallery
+              items={galleryImages}
+              startIndex={lightboxStartIndex}
+              showPlayButton={false}
+              showFullscreenButton={true}
+              useBrowserFullscreen={false}
+              showThumbnails={true}
+              showNav={true}
+            />
+          </Modal>
+        )}
+      </AnimatePresence>
+
     </PageContainer>
   );
 }

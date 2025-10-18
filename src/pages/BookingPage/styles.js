@@ -176,14 +176,37 @@ export const DetailsContainer = styled.div`
     margin-top: 0;
     border-bottom: 2px solid #f0f0f0;
     padding-bottom: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem; /* Aumentado o espaçamento */
+    font-size: 1.4rem; /* Um pouco maior */
+    color: #333; 
+  }
+
+  p {
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 1.5rem;
   }
   
   ul {
     list-style: none;
     padding: 0;
+    margin-bottom: 2rem;
     li {
-      padding: 0.5rem 0;
+      padding: 0.75rem 0;
+      border-bottom: 1px dashed #eee; /* Linha tracejada para separação sutil */
+      display: flex;
+      justify-content: space-between;
+      font-size: 1rem;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+
+      strong {
+        color: #333;
+        min-width: 120px;
+        font-weight: 700;
+      }
     }
   }
 `;
@@ -213,20 +236,34 @@ export const TimeSlot = styled.button`
 
 export const GalleryModalGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+
+  @media (min-width: 480px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(5, 1fr);
+  }
 `;
 
 export const GalleryImage = styled.img`
   width: 100%;
-  height: 120px;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   
   &:hover {
     transform: scale(1.05);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
   }
 `;
 
@@ -363,4 +400,11 @@ export const DetailItem = styled.div`
   span:last-child {
     color: #333;
   }
+`;
+
+export const DetailCtaButton = styled(Button)`
+  margin-top: 2rem;
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 15px 24px;
 `;

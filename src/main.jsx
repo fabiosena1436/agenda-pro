@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { AuthProvider } from './contexts/AuthContext'; // <-- IMPORTA AQUI
 import 'react-datepicker/dist/react-datepicker.css';
+import 'react-image-gallery/styles/css/image-gallery.css';
 import { ptBR } from 'date-fns/locale';
 import { registerLocale, setDefaultLocale } from 'react-datepicker';
 
