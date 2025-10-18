@@ -219,7 +219,7 @@ export default function BookingPage() {
         </Header>
       </HeaderWrapper>
 
-      <BusinessInfo>
+      <BusinessInfo $bannerUrl={businessData?.bannerUrl}>
         <img src={businessData.logoUrl} alt="Logo" style={{ width: 120, height: 120, borderRadius: '50%', marginTop: '-80px', border: '5px solid white', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }} />
         <h2>{businessData.name}</h2>
         <p>{businessData.address}</p>

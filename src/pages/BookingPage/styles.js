@@ -25,7 +25,12 @@ export const BusinessInfo = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  background-color: white;
+  background: ${props => props.$bannerUrl
+    ? `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${props.$bannerUrl})`
+    : 'white'};
+  background-size: cover;
+  background-position: center;
+  color: ${props => props.$bannerUrl ? 'white' : 'inherit'};
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 10px 20px rgba(0,0,0,0.08);
@@ -34,6 +39,15 @@ export const BusinessInfo = styled.div`
   margin-right: auto;
   position: relative;
   z-index: 2;
+
+  h2, p {
+    color: ${props => props.$bannerUrl ? 'white' : 'inherit'};
+    text-shadow: ${props => props.$bannerUrl ? '0 2px 4px rgba(0,0,0,0.5)' : 'none'};
+  }
+
+  a {
+    color: ${props => props.$bannerUrl ? 'white' : '#4a4a4a'} !important;
+  }
 `;
 
 export const SocialLinks = styled.div`

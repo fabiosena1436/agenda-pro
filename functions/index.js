@@ -109,8 +109,24 @@ exports.calculateAvailableSlots = functions.https.onCall(async (data, context) =
     dayConfig.intervals.forEach(interval => {
       // CORREÇÃO: Validando se o intervalo está bem formatado
       if (interval && typeof interval.start === 'string' && typeof interval.end === 'string') {
-        const [startHour, startMinute] = interval.start.split(':').map(Number);
-        const [endHour, endMinute] = interval.end.split(':').map(Number);
+        
+        const startParts = interval.start.split(':');
+        const endParts = interval.end.split(':');
+
+        // ADICIONADO: Validação robusta para o formato do horário "HH:mm"
+        if (startParts.length !== 2 || endParts.length !== 2) {
+          functions.logger.warn(`Intervalo de horário mal formatado ignorado: ${JSON.stringify(interval)} para o negócio ${businessId}`);
+          return; // Pula para o próximo intervalo
+        }
+
+        const [startHour, startMinute] = startParts.map(Number);
+        const [endHour, endMinute] = endParts.map(Number);
+
+        // ADICIONADO: Validação se as partes são números válidos
+        if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
+          functions.logger.warn(`Intervalo de horário com partes não numéricas ignorado: ${JSON.stringify(interval)} para o negócio ${businessId}`);
+          return; // Pula para o próximo intervalo
+        }
 
         let currentTime = createZonedDate(clientDate, startHour, startMinute);
         const endTime = createZonedDate(clientDate, endHour, endMinute);
@@ -154,6 +170,10 @@ exports.createSubscription = functions.https.onRequest((req, res) => {
       const email = decodedToken.email;
       const { data } = req.body;
       const { planId } = data;
+
+      // CORREÇÃO: Usar a origem da requisição para as URLs de retorno
+      const origin = req.headers.origin || 'https://agendapro-web.firebaseapp.com'; // Fallback para a URL de produção
+
       const client = new MercadoPagoConfig({ 
         accessToken: functions.config().mercadopago.access_token 
       });
@@ -175,9 +195,9 @@ exports.createSubscription = functions.https.onRequest((req, res) => {
           }],
           payer: { email: email },
           back_urls: {
-              success: 'http://localhost:5173/dashboard',
-              failure: 'http://localhost:5173/dashboard/plans',
-              pending: 'http://localhost:5173/dashboard/plans',
+              success: `${origin}/dashboard`,
+              failure: `${origin}/dashboard/plans`,
+              pending: `${origin}/dashboard/plans`,
           },
           auto_return: 'approved',
           external_reference: `${uid}_${planId}_${Date.now()}`,
@@ -190,46 +210,6 @@ exports.createSubscription = functions.https.onRequest((req, res) => {
         return res.status(401).send('Unauthorized');
       }
       return res.status(500).json({ error: { message: "Erro ao processar pagamento." } });
-    }
-  });
-});
-
-exports.generateUploadUrl = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    if (req.method !== 'POST') {
-      return res.status(405).send('Method Not Allowed');
-    }
-    const token = req.headers.authorization?.split('Bearer ')[1];
-    if (!token) {
-      return res.status(401).json({ error: { message: 'Unauthorized' }});
-    }
-    try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
-      const uid = decodedToken.uid;
-      const { data } = req.body;
-      const { filePath, contentType } = data;
-      if (!filePath || !contentType) {
-        return res.status(400).json({ error: { message: 'filePath e contentType são obrigatórios.' }});
-      }
-      if (!filePath.startsWith(`businesses/${uid}/`)) {
-          return res.status(403).json({ error: { message: 'Permission-denied.' }});
-      }
-      const bucket = storage.bucket("agendapro-web.firebasestorage.app");
-      const file = bucket.file(filePath);
-      const options = {
-        version: 'v4',
-        action: 'write',
-        expires: Date.now() + 15 * 60 * 1000, // 15 minutos
-        contentType,
-      };
-      const [url] = await file.getSignedUrl(options);
-      return res.status(200).json({ data: { signedUrl: url } });
-    } catch (error) {
-      functions.logger.error("Erro ao gerar URL assinada:", error);
-      if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
-        return res.status(401).json({ error: { message: 'Unauthorized' }});
-      }
-      return res.status(500).json({ error: { message: "Erro interno ao gerar URL de upload." } });
     }
   });
 });
