@@ -154,9 +154,10 @@ exports.calculateAvailableSlots = functions.https.onCall(async (data, context) =
       }
     });
 
-    availableSlots.sort((a, b) => new Date(a) - new Date(b));
+    const uniqueSlots = [...new Set(availableSlots)];
+    uniqueSlots.sort((a, b) => new Date(a) - new Date(b));
 
-    return { availableSlots };
+    return { availableSlots: uniqueSlots };
 
   } catch (error) {
     functions.logger.error("Erro ao calcular horários:", error);
