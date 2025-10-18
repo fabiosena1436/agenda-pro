@@ -78,6 +78,15 @@ exports.calculateAvailableSlots = functions.https.onCall(async (data, context) =
     const dayKey = weekDays[dayOfWeek];
     const dayConfig = workingHours[dayKey];
 
+    // Adicionando lógica de migração para estruturas de dados antigas
+    if (dayConfig && !dayConfig.intervals) {
+      if (dayConfig.start && dayConfig.end) {
+        dayConfig.intervals = [{ start: dayConfig.start, end: dayConfig.end }];
+      } else {
+        dayConfig.intervals = [];
+      }
+    }
+
     if (!dayConfig || !dayConfig.isOpen || !dayConfig.intervals || dayConfig.intervals.length === 0) {
       return { availableSlots: [] };
     }
@@ -140,7 +149,7 @@ exports.calculateAvailableSlots = functions.https.onCall(async (data, context) =
           if (!isOverlapping && currentTime > new Date()) {
             availableSlots.push(currentTime.toISOString());
           }
-          currentTime = addMinutes(currentTime, 15);
+          currentTime = addMinutes(currentTime, serviceDuration);
         }
       }
     });
