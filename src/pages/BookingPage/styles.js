@@ -81,8 +81,8 @@ export const TabContainer = styled.div`
 export const TabButton = styled.button`
   padding: 0.8rem 1.8rem;
   border: none;
-  background-color: ${props => props.active ? 'linear-gradient(to right, #6a11cb, #2575fc)' : 'transparent'};
-  color: ${props => props.active ? 'white' : '#333'};
+  background: ${props => props.$active ? 'linear-gradient(to right, #6a11cb, #2575fc)' : 'transparent'};
+  color: ${props => props.$active ? 'white' : '#333'};
   border-radius: 50px;
   cursor: pointer;
   font-weight: 600;
@@ -91,7 +91,7 @@ export const TabButton = styled.button`
   outline: none;
   
   &:hover {
-    background-color: ${props => !props.active && '#f0f0f0'};
+    background-color: ${props => !props.$active && '#f0f0f0'};
   }
 `;
 

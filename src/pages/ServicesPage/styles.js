@@ -35,25 +35,45 @@ export const ServiceItem = styled.div`
   margin-bottom: 15px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; // Allows wrapping on smaller screens
-  gap: 15px;
+  gap: 20px;
 
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     flex-direction: column;
     align-items: flex-start;
   }
 `;
 
-export const ServiceInfo = styled.div`
+export const ServiceImage = styled.div`
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+export const ServiceDetails = styled.div`
+  display: flex;
+  flex-direction: column;
   flex-grow: 1;
+  gap: 10px;
+`;
+
+export const ServiceInfo = styled.div`
+  /* No specific styles needed here for now */
 `;
 
 export const ServiceActions = styled.div`
   display: flex;
   gap: 10px;
-  flex-wrap: wrap; // Allows wrapping on smaller screens
+  flex-wrap: wrap;
 `;
 
 

@@ -262,8 +262,8 @@ export default function BookingPage() {
       </BusinessInfo>
 
       <TabContainer>
-        <TabButton active={activeTab === 'servicos'} onClick={() => setActiveTab('servicos')}>Serviços</TabButton>
-        <TabButton active={activeTab === 'detalhes'} onClick={() => setActiveTab('detalhes')}>Detalhes</TabButton>
+        <TabButton $active={activeTab === 'servicos'} onClick={() => setActiveTab('servicos')}>Serviços</TabButton>
+        <TabButton $active={activeTab === 'detalhes'} onClick={() => setActiveTab('detalhes')}>Detalhes</TabButton>
       </TabContainer>
 
       <ContentWrapper>

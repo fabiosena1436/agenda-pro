@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
+import { useNavigate } from "react-router-dom";
 import {
-  PageContainer, FormSection, ServicesListSection, ServiceItem, ServiceInfo, ServiceActions, GalleryGrid, ImageContainer, DeleteButton, UploadLabel
+  PageContainer, FormSection, ServicesListSection, ServiceItem, ServiceImage, ServiceDetails, ServiceInfo, ServiceActions, GalleryGrid, ImageContainer, DeleteButton, UploadLabel
 } from "./styles";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
@@ -17,6 +18,7 @@ import imageCompression from 'browser-image-compression';
 
 export default function ServicesPage() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [serviceName, setServiceName] = useState("");
   const [servicePrice, setServicePrice] = useState("");
   const [serviceDuration, setServiceDuration] = useState("");
@@ -26,6 +28,20 @@ export default function ServicesPage() {
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedServiceForGallery, setSelectedServiceForGallery] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [businessSlug, setBusinessSlug] = useState("");
+
+  useEffect(() => {
+    if (currentUser) {
+      const businessDocRef = doc(db, "businesses", currentUser.uid);
+      const getSlug = async () => {
+        const docSnap = await getDoc(businessDocRef);
+        if (docSnap.exists()) {
+          setBusinessSlug(docSnap.data().slug);
+        }
+      }
+      getSlug();
+    }
+  }, [currentUser]);
 
   const handleAddService = async (event) => {
     event.preventDefault();
@@ -187,6 +203,14 @@ export default function ServicesPage() {
     }
   };
 
+  const handleScheduleRedirect = () => {
+    if (businessSlug) {
+      navigate(`/agendar/${businessSlug}`);
+    } else {
+      toast.error("Não foi possível encontrar a página de agendamento.");
+    }
+  }
+
   return (
     <PageContainer>
       <FormSection>
@@ -206,15 +230,21 @@ export default function ServicesPage() {
         ) : (
           services.map((service) => (
             <ServiceItem key={service.id}>
-              <ServiceInfo>
-                <strong>{service.name}</strong>
-                <p>Preço: R$ {service.price.toFixed(2)} | Duração: {service.duration} min</p>
-              </ServiceInfo>
-              <ServiceActions>
-                <Button onClick={() => handleOpenGallery(service)}>Galeria</Button>
-                <Button onClick={() => { setEditingService(service); setIsEditModalOpen(true); }}>Editar</Button>
-                <Button danger onClick={() => handleDeleteService(service.id)}>Apagar</Button>
-              </ServiceActions>
+              <ServiceImage onClick={() => handleOpenGallery(service)}>
+                <img src={service.gallery && service.gallery.length > 0 ? service.gallery[0] : 'https://via.placeholder.com/100x100.png/eee/ccc?text=Serviço'} alt={service.name} />
+              </ServiceImage>
+              <ServiceDetails>
+                <ServiceInfo>
+                  <strong>{service.name}</strong>
+                  <p>Preço: R$ {service.price.toFixed(2)} | Duração: {service.duration} min</p>
+                </ServiceInfo>
+                <ServiceActions>
+                  <Button onClick={handleScheduleRedirect}>Agendar Horário</Button>
+                  <Button onClick={() => handleOpenGallery(service)}>Galeria</Button>
+                  <Button onClick={() => { setEditingService(service); setIsEditModalOpen(true); }}>Editar</Button>
+                  <Button danger onClick={() => handleDeleteService(service.id)}>Apagar</Button>
+                </ServiceActions>
+              </ServiceDetails>
             </ServiceItem>
           ))
         )}
@@ -250,7 +280,10 @@ export default function ServicesPage() {
               ))}
             </GalleryGrid>
 
-            <UploadLabel htmlFor="image-upload">{isUploading ? 'A enviar...' : 'Adicionar Imagens'}</UploadLabel>
+            <div style={{ marginTop: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <UploadLabel htmlFor="image-upload">{isUploading ? 'A enviar...' : 'Adicionar Imagens'}</UploadLabel>
+              <Button onClick={handleScheduleRedirect}>Agendar Horário</Button>
+            </div>
             <input 
               id="image-upload"
               type="file" 
