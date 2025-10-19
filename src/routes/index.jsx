@@ -8,10 +8,11 @@ import ProtectedRoute from "./ProtectedRoute";
 import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
+import BookingPage from "../pages/BookingPage";
 import DashboardPage from "../pages/DashboardPage";
 import ServicesPage from "../pages/ServicesPage";
 import SettingsPage from "../pages/SettingsPage";
-import BookingPage from "../pages/BookingPage";
+
 import AppointmentsPage from "../pages/AppointmentsPage";
 import PlansPage from "../pages/PlansPage"; // NOVO: Importamos a página de planos
 import AdminLayout from '../components/AdminLayout';
@@ -24,6 +25,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/agendar/:slug" element={<BookingPage />} />
+      
 
       {/* Rotas Protegidas dentro do AdminLayout */}
       <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
