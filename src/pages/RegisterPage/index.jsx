@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom'; // NOVO: Importamos a ferramenta de navegação
+import { useNavigate } from 'react-router-dom'; // Importamos a ferramenta de navegação
 import { PageContainer, FormContainer } from './styles';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -12,7 +12,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate(); // NOVO: Inicializamos a ferramenta de navegação
+  const navigate = useNavigate(); // Inicializamos a ferramenta de navegação
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -26,7 +26,7 @@ export default function RegisterPage() {
       await createUserWithEmailAndPassword(auth, email, password);
       toast.success('Utilizador criado com sucesso! A redirecionar para o seu painel...');
 
-      // NOVO: A mágica acontece aqui! Após o sucesso, navegamos para o dashboard.
+      // A mágica acontece aqui! Após o sucesso, navegamos para o dashboard.
       // O Firebase já mantém o utilizador logado automaticamente após o registo.
       navigate('/dashboard'); 
 
@@ -55,6 +55,13 @@ export default function RegisterPage() {
         />
         <Button type="submit">Registar</Button>
       </FormContainer>
+      {/* NOVIDADE: Botão de chamada para Ação para fazer Login */}
+      <div style={{ marginTop: '20px' }}>
+        <p>Já tem uma conta?</p>
+        <Button type="button" onClick={() => navigate('/login')} className="secondary" style={{ marginTop: '10px' }}>
+          Fazer Login
+        </Button>
+      </div>
     </PageContainer>
   );
 }

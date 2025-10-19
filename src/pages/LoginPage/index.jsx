@@ -50,6 +50,13 @@ export default function LoginPage() {
         />
         <Button type="submit">Entrar</Button>
       </FormContainer>
+      {/* NOVIDADE: Botão de chamada para Ação para criar uma conta */}
+      <div style={{ marginTop: '20px' }}>
+        <p>Ainda não tem uma conta?</p>
+        <Button type="button" onClick={() => navigate('/register')} style={{ marginTop: '10px' }}>
+          Crie a Sua Conta
+        </Button>
+      </div>
     </PageContainer>
   );
 }

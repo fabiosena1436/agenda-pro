@@ -5,8 +5,8 @@ export const PLANS = [
     name: 'Plano Grátis',
     price: 0,
     features: [
-      'Até 10 serviços',
-      'Até 20 agendamentos por mês',
+      'Até 1 serviço', // ALTERADO: Limite de 1 serviço
+      'Até 10 agendamentos por mês',
       'Página de agendamento online',
       'Suporte por e-mail',
     ],

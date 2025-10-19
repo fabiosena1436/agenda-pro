@@ -1,4 +1,3 @@
-// Lembre-se de instalar o react-scroll: npm install react-scroll
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { db, functions } from '../../services/firebaseConfig';
@@ -13,6 +12,7 @@ import { FiClock } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link as ScrollLink, scroller } from 'react-scroll';
 import Footer from '../../components/Footer';
+import { useNavigate } from 'react-router-dom'; // NOVIDADE: Importar useNavigate
 
 import {
   PageContainer,
@@ -38,7 +38,7 @@ import {
   DatePickerWrapper,
   BookingForm,
   Input,
-  Button,
+  Button, // NOVIDADE: Importar Button
   ButtonGroup,
   ConfirmationWrapper,
   ConfirmationCard,
@@ -60,6 +60,7 @@ const Navigation = () => (
 );
 
 export default function HomePage() {
+  const navigate = useNavigate(); // NOVIDADE: Inicializar useNavigate
   const [businessData, setBusinessData] = useState(null);
   const [businessId, setBusinessId] = useState(null);
   const [services, setServices] = useState([]);
@@ -246,6 +247,10 @@ export default function HomePage() {
     }
   };
 
+  const handleRegisterClick = () => { // NOVIDADE: Função para navegar para a página de registo
+    navigate('/register');
+  };
+
   if (loading) return <p>A carregar...</p>;
   if (!businessData) return <p>Estabelecimento não encontrado.</p>;
   
@@ -266,6 +271,14 @@ export default function HomePage() {
         <Header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1>{businessData.name}</h1>
           <p>{businessData.slogan}</p>
+          {/* NOVIDADE: Botão que incentiva o novo utilizador a registar */}
+          <Button 
+            className="primary" 
+            onClick={handleRegisterClick} 
+            style={{ marginTop: '2rem', padding: '15px 30px', fontSize: '1.2rem' }}
+          >
+            Crie a Sua Agenda Agora
+          </Button>
         </Header>
       </HeaderWrapper>
 

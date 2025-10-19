@@ -50,8 +50,9 @@ export default function ServicesPage() {
     if (docSnap.exists()) {
       const businessData = docSnap.data();
       const planId = businessData.planId || 'free';
-      if (planId === 'free' && services.length >= 10) {
-        toast.warn("Você atingiu o limite de 10 serviços para o Plano Grátis. Faça um upgrade para adicionar mais!");
+      // LÓGICA ALTERADA: Limite agora é 1 serviço para o Plano Grátis
+      if (planId === 'free' && services.length >= 1) {
+        toast.warn("Você atingiu o limite de 1 serviço para o Plano Grátis. Faça um upgrade para adicionar mais!");
         return;
       }
     }
