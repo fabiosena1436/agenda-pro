@@ -1,7 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
-const { getDay, startOfDay, endOfDay, addMinutes } = require("date-fns");
+const { getDay, startOfDay, endOfDay, addMinutes, startOfMonth, endOfMonth } = require("date-fns"); 
 const { utcToZonedTime, zonedTimeToUtc } = require("date-fns-tz");
 
 // CORREÇÃO: Adicionando a importação do CORS que estava faltando
@@ -18,6 +18,14 @@ const createZonedDate = (date, hours, minutes) => {
   const zonedDate = utcToZonedTime(date, timeZone);
   zonedDate.setHours(hours, minutes, 0, 0);
   return zonedTimeToUtc(zonedDate, timeZone);
+};
+
+// NOVIDADE: Função auxiliar para verificar se o utilizador é Super Admin
+const isSuperAdmin = async (uid) => {
+    if (!uid) return false;
+    // Verifica a existência do UID na coleção 'superAdmins'
+    const adminDoc = await db.collection('superAdmins').doc(uid).get();
+    return adminDoc.exists;
 };
 
 exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
@@ -38,6 +46,133 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   } catch (error) {
     functions.logger.error("Erro ao criar documento do negócio:", error);
   }
+});
+
+// NOVIDADE: Função Callable para Ações de Super Admin
+exports.adminManageBusiness = functions.https.onCall(async (data, context) => {
+    if (!context.auth || !context.auth.uid) {
+        throw new functions.https.HttpsError('unauthenticated', 'Apenas utilizadores autenticados podem realizar esta ação.');
+    }
+    
+    // 1. VERIFICAÇÃO DE PERMISSÃO DE SUPER ADMIN
+    const callerIsAdmin = await isSuperAdmin(context.auth.uid);
+    if (!callerIsAdmin) {
+        throw new functions.https.HttpsError('permission-denied', 'Apenas Super Administradores podem realizar esta ação.');
+    }
+
+    const { targetBusinessId, action, value } = data;
+
+    if (!targetBusinessId || !action) {
+        throw new functions.https.HttpsError('invalid-argument', 'Faltam o ID do negócio alvo e a ação a ser executada.');
+    }
+
+    const businessDocRef = db.collection('businesses').doc(targetBusinessId);
+    
+    try {
+        switch (action) {
+            case 'changePlan':
+                if (!['free', 'basic', 'pro', 'plus'].includes(value)) { // 'plus' é assumido como um plano futuro
+                    throw new new functions.https.HttpsError('invalid-argument', 'Plano inválido.');
+                }
+                await businessDocRef.update({
+                    planId: value,
+                    // Poderia adicionar uma lógica de expiração da subscrição aqui se necessário
+                });
+                return { success: true, message: `Plano atualizado para ${value}.` };
+
+            case 'blockBusiness':
+                await businessDocRef.update({
+                    isBlocked: true,
+                    blockReason: value || 'Bloqueado pelo administrador.',
+                });
+                return { success: true, message: `Negócio bloqueado com sucesso. Razão: ${value}` };
+
+            case 'unblockBusiness':
+                await businessDocRef.update({
+                    isBlocked: false,
+                    blockReason: admin.firestore.FieldValue.delete(), // Remove o campo
+                });
+                return { success: true, message: 'Negócio desbloqueado com sucesso.' };
+
+            case 'deleteBusiness':
+                // Nota: Apagar o utilizador do Auth deve ser feito separadamente ou em cascata
+                await businessDocRef.delete();
+                return { success: true, message: 'Documento do negócio apagado (Ação manual necessária para Auth e Storage).' };
+                
+            default:
+                throw new functions.https.HttpsError('invalid-argument', 'Ação desconhecida.');
+        }
+    } catch (error) {
+        functions.logger.error(`Erro ao gerir negócio ${targetBusinessId} com ação ${action}:`, error);
+        throw new functions.https.HttpsError('internal', 'Erro na gestão do negócio.');
+    }
+});
+
+exports.createAppointment = functions.https.onCall(async (data, context) => {
+    const { businessId, serviceId, serviceName, clientName, clientPhone, startTime, duration } = data;
+
+    // 1. Validação
+    if (!businessId || !serviceId || !clientName || !clientPhone || !startTime || !duration || !serviceName) {
+        throw new functions.https.HttpsError('invalid-argument', 'Faltam dados essenciais para o agendamento.');
+    }
+    
+    try {
+        const businessDocRef = db.collection('businesses').doc(businessId);
+        const businessDoc = await businessDocRef.get();
+
+        if (!businessDoc.exists) {
+            throw new functions.https.HttpsError('not-found', 'Negócio não encontrado.');
+        }
+
+        const businessData = businessDoc.data();
+        const planId = businessData.planId || 'free';
+        const appointmentStartTime = new Date(startTime);
+        
+        // 2. VERIFICAÇÃO DO LIMITE DE AGENDAMENTOS (Plano Grátis)
+        if (planId === 'free') {
+            const now = new Date();
+            const startOfCurrentMonth = startOfMonth(now);
+            const endOfCurrentMonth = endOfMonth(now);
+
+            // Consulta para contar agendamentos do mês atual
+            const appointmentsQuery = db.collection('businesses').doc(businessId).collection('appointments')
+                .where('startTime', '>=', admin.firestore.Timestamp.fromDate(startOfCurrentMonth))
+                .where('startTime', '<=', admin.firestore.Timestamp.fromDate(endOfCurrentMonth));
+
+            const appointmentsSnapshot = await appointmentsQuery.get();
+            const currentAppointmentsCount = appointmentsSnapshot.size;
+
+            // Limite de 10 agendamentos para o plano grátis
+            if (currentAppointmentsCount >= 10) {
+                functions.logger.info(`Limite de agendamentos atingido para o negócio ${businessId}.`);
+                throw new functions.https.HttpsError('permission-denied', 'O seu Plano Grátis atingiu o limite de 10 agendamentos por mês.');
+            }
+        }
+        
+        // 3. Criação do Agendamento
+        const appointmentRef = db.collection('businesses').doc(businessId).collection('appointments');
+        const appointmentData = {
+            serviceId,
+            serviceName,
+            clientName,
+            clientPhone,
+            startTime: admin.firestore.Timestamp.fromDate(appointmentStartTime),
+            endTime: admin.firestore.Timestamp.fromDate(addMinutes(appointmentStartTime, duration)),
+            status: 'confirmed',
+            duration: duration,
+        };
+
+        const docRef = await appointmentRef.add(appointmentData);
+
+        return { success: true, appointmentId: docRef.id };
+
+    } catch (error) {
+        if (error.code === 'permission-denied' || error.code === 'not-found' || error.code === 'invalid-argument') {
+            throw error;
+        }
+        functions.logger.error("Erro interno ao criar agendamento:", error);
+        throw new functions.https.HttpsError('internal', 'Ocorreu um erro interno ao processar o agendamento.');
+    }
 });
 
 exports.calculateAvailableSlots = functions.https.onCall(async (data, context) => {

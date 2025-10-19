@@ -1,3 +1,4 @@
+// Lembre-se de instalar o react-scroll: npm install react-scroll
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { db, functions } from '../../services/firebaseConfig';
@@ -12,7 +13,7 @@ import { FiClock } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link as ScrollLink, scroller } from 'react-scroll';
 import Footer from '../../components/Footer';
-import { useNavigate } from 'react-router-dom'; // NOVIDADE: Importar useNavigate
+import { useNavigate } from 'react-router-dom';
 
 import {
   PageContainer,
@@ -38,7 +39,7 @@ import {
   DatePickerWrapper,
   BookingForm,
   Input,
-  Button, // NOVIDADE: Importar Button
+  Button,
   ButtonGroup,
   ConfirmationWrapper,
   ConfirmationCard,
@@ -60,7 +61,7 @@ const Navigation = () => (
 );
 
 export default function HomePage() {
-  const navigate = useNavigate(); // NOVIDADE: Inicializar useNavigate
+  const navigate = useNavigate(); 
   const [businessData, setBusinessData] = useState(null);
   const [businessId, setBusinessId] = useState(null);
   const [services, setServices] = useState([]);
@@ -216,20 +217,23 @@ export default function HomePage() {
     }
     setIsBooking(true);
     try {
-      const appointmentsRef = collection(db, 'businesses', businessId, 'appointments');
-      const docRef = await addDoc(appointmentsRef, {
+      // MUDANÇA: Substituímos addDoc por uma chamada à Cloud Function para aplicar os limites
+      const createAppointment = httpsCallable(functions, 'createAppointment');
+      
+      const result = await createAppointment({
+        businessId: businessId,
         serviceId: selectedService.id,
         serviceName: selectedService.name,
         clientName,
         clientPhone,
-        startTime: Timestamp.fromDate(selectedSlot),
-        endTime: Timestamp.fromDate(addMinutes(selectedSlot, selectedService.duration)),
-        status: 'confirmed',
-        duration: selectedService.duration
+        startTime: selectedSlot.toISOString(), // Enviamos como string ISO para o back-end
+        duration: selectedService.duration,
       });
+
+      const docRefId = result.data.appointmentId; // Obtemos o ID do resultado da Cloud Function
       
       setBookingDetails({
-        id: docRef.id,
+        id: docRefId,
         serviceName: selectedService.name,
         clientName: clientName,
         date: selectedSlot.toLocaleDateString('pt-BR'),
@@ -241,13 +245,15 @@ export default function HomePage() {
 
     } catch (error) {
       console.error("Erro ao confirmar agendamento:", error);
-      toast.error("Não foi possível confirmar o agendamento.");
+      // MUDANÇA: Exibir a mensagem de erro específica do back-end (limite atingido)
+      const errorMessage = error.details?.message || "Não foi possível confirmar o agendamento.";
+      toast.error(errorMessage);
     } finally {
       setIsBooking(false);
     }
   };
 
-  const handleRegisterClick = () => { // NOVIDADE: Função para navegar para a página de registo
+  const handleRegisterClick = () => {
     navigate('/register');
   };
 
@@ -271,7 +277,7 @@ export default function HomePage() {
         <Header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1>{businessData.name}</h1>
           <p>{businessData.slogan}</p>
-          {/* NOVIDADE: Botão que incentiva o novo utilizador a registar */}
+          {/* BOTÃO MANTIDO: Botão que incentiva o novo utilizador a registar */}
           <Button 
             className="primary" 
             onClick={handleRegisterClick} 

@@ -12,9 +12,10 @@ import BookingPage from "../pages/BookingPage";
 import DashboardPage from "../pages/DashboardPage";
 import ServicesPage from "../pages/ServicesPage";
 import SettingsPage from "../pages/SettingsPage";
-
 import AppointmentsPage from "../pages/AppointmentsPage";
-import PlansPage from "../pages/PlansPage"; // NOVO: Importamos a página de planos
+import PlansPage from "../pages/PlansPage"; 
+// NOVO: Importamos a página de Super Admin
+import SuperAdminPage from "../pages/SuperAdminPage"; 
 import AdminLayout from '../components/AdminLayout';
 
 export default function AppRoutes() {
@@ -33,7 +34,9 @@ export default function AppRoutes() {
         <Route path="/dashboard/appointments" element={<AppointmentsPage />} />
         <Route path="/dashboard/services" element={<ServicesPage />} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
-        <Route path="/dashboard/plans" element={<PlansPage />} /> {/* NOVO: Adicionamos a rota */}
+        <Route path="/dashboard/plans" element={<PlansPage />} />
+        {/* NOVO: Rota do Super Admin */}
+        <Route path="/super-admin" element={<SuperAdminPage />} />
       </Route>
     </Routes>
   );

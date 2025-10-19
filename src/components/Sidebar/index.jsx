@@ -4,9 +4,11 @@ import { SidebarContainer, Logo, NavList, NavItem } from './styles';
 import Button from '../Button';
 import { auth } from '../../services/firebaseConfig';
 import { signOut } from 'firebase/auth';
+import { useAuth } from '../../contexts/AuthContext'; // NOVIDADE: Importar useAuth
 
 export default function Sidebar({ isOpen }) {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth(); // NOVIDADE: Obter status de Admin
 
   const handleLogout = async () => {
     try {
@@ -29,6 +31,11 @@ export default function Sidebar({ isOpen }) {
         <li><NavItem to="/dashboard/services">Serviços</NavItem></li>
         <li><NavItem to="/dashboard/settings">Configurações</NavItem></li>
         <li><NavItem to="/dashboard/plans">Planos e Assinatura</NavItem></li>
+        
+        {/* NOVIDADE: Link Condicional para Super Admin */}
+        {isSuperAdmin && (
+            <li><NavItem to="/super-admin">Super Admin</NavItem></li>
+        )}
       </NavList>
 
       <Button danger onClick={handleLogout}>Sair</Button>

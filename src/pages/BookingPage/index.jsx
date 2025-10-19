@@ -219,20 +219,23 @@ export default function BookingPage() {
     }
     setIsBooking(true);
     try {
-      const appointmentsRef = collection(db, 'businesses', businessId, 'appointments');
-      const docRef = await addDoc(appointmentsRef, {
+      // MUDANÇA: Substituímos addDoc por uma chamada à Cloud Function para aplicar os limites
+      const createAppointment = httpsCallable(functions, 'createAppointment');
+      
+      const result = await createAppointment({
+        businessId: businessId,
         serviceId: selectedService.id,
         serviceName: selectedService.name,
         clientName,
         clientPhone,
-        startTime: Timestamp.fromDate(selectedSlot),
-        endTime: Timestamp.fromDate(addMinutes(selectedSlot, selectedService.duration)),
-        status: 'confirmed',
-        duration: selectedService.duration // Salva a duração para uso futuro no reagendamento
+        startTime: selectedSlot.toISOString(), // Enviamos como string ISO para o back-end
+        duration: selectedService.duration,
       });
+
+      const docRefId = result.data.appointmentId; // Obtemos o ID do resultado da Cloud Function
       
       setBookingDetails({
-        id: docRef.id,
+        id: docRefId,
         serviceName: selectedService.name,
         clientName: clientName,
         date: selectedSlot.toLocaleDateString('pt-BR'),
@@ -244,7 +247,9 @@ export default function BookingPage() {
 
     } catch (error) {
       console.error("Erro ao confirmar agendamento:", error);
-      toast.error("Não foi possível confirmar o agendamento.");
+      // MUDANÇA: Exibir a mensagem de erro específica do back-end (limite atingido)
+      const errorMessage = error.details?.message || "Não foi possível confirmar o agendamento.";
+      toast.error(errorMessage);
     } finally {
       setIsBooking(false);
     }

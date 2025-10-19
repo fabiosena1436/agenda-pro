@@ -16,6 +16,20 @@ import {
 import { ref, deleteObject, getDownloadURL } from "firebase/storage";
 import imageCompression from 'browser-image-compression';
 
+// NOVIDADE: Mapeamento dos limites de serviço por plano
+const SERVICE_LIMITS = {
+  free: 1,
+  basic: 50,
+  pro: Infinity, // Ilimitado
+};
+
+// NOVIDADE: Mapeamento dos nomes de plano para mensagens de erro
+const PLAN_NAMES = {
+    free: 'Plano Grátis',
+    basic: 'Plano Básico',
+    pro: 'Plano Pro',
+};
+
 export default function ServicesPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -50,9 +64,14 @@ export default function ServicesPage() {
     if (docSnap.exists()) {
       const businessData = docSnap.data();
       const planId = businessData.planId || 'free';
-      // LÓGICA ALTERADA: Limite agora é 1 serviço para o Plano Grátis
-      if (planId === 'free' && services.length >= 1) {
-        toast.warn("Você atingiu o limite de 1 serviço para o Plano Grátis. Faça um upgrade para adicionar mais!");
+      const serviceLimit = SERVICE_LIMITS[planId] || SERVICE_LIMITS.pro; // Obtém o limite
+
+      // LÓGICA UNIFICADA: Aplica o limite correto para Free (1) e Basic (50)
+      if (services.length >= serviceLimit) { 
+        const limitText = serviceLimit === 1 ? '1 serviço' : `${serviceLimit} serviços`;
+        const planName = PLAN_NAMES[planId] || 'Seu Plano Atual';
+
+        toast.warn(`Você atingiu o limite de ${limitText} para o ${planName}. Faça um upgrade para adicionar mais!`);
         return;
       }
     }
