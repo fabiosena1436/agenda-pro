@@ -73,6 +73,8 @@ export default function BookingPage() {
   const [activeTab, setActiveTab] = useState('servicos');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [isServiceGalleryOpen, setIsServiceGalleryOpen] = useState(false);
+
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
 
@@ -84,6 +86,23 @@ export default function BookingPage() {
   const handleCloseLightbox = () => {
     setIsLightboxOpen(false);
   };
+
+  // --- New Handlers for Service Gallery Flow ---
+  const handleOpenServiceGallery = (service) => {
+    setSelectedService(service);
+    setIsServiceGalleryOpen(true);
+  };
+
+  const handleCloseServiceGallery = () => {
+    setIsServiceGalleryOpen(false);
+    // We don't clear selectedService here so the user can proceed to booking
+  };
+
+  const handleProceedToBooking = () => {
+    setIsServiceGalleryOpen(false);
+    setIsBookingModalOpen(true);
+  };
+  // ------------------------------------------
 
   const cleanPhoneNumber = (phone) => {
     if (!phone) return '';
@@ -127,7 +146,7 @@ export default function BookingPage() {
     );
   }, [services, searchTerm]);
 
-  const galleryImages = useMemo(() => {
+  const businessGalleryImages = useMemo(() => {
     if (!businessData?.aboutGallery || businessData.aboutGallery.length === 0) return [];
     return businessData.aboutGallery.map(url => ({
       original: url,
@@ -136,6 +155,15 @@ export default function BookingPage() {
       thumbnailAlt: 'Miniatura da Galeria',
     }));
   }, [businessData]);
+
+  // New memo for service-specific gallery
+  const serviceGalleryImages = useMemo(() => {
+    if (!selectedService?.gallery || selectedService.gallery.length === 0) return [];
+    return selectedService.gallery.map(url => ({
+      original: url,
+      thumbnail: url,
+    }));
+  }, [selectedService]);
 
   const fetchAvailableSlots = useCallback(async () => {
     if (!selectedService || !selectedDate || !businessId) return;
@@ -277,7 +305,7 @@ export default function BookingPage() {
             />
             <ServiceList>
               {filteredServices.map(service => (
-                <ServiceCard key={service.id} onClick={() => handleOpenBookingModal(service)} whileHover={{ y: -5 }}>
+                <ServiceCard key={service.id} onClick={() => handleOpenServiceGallery(service)} whileHover={{ y: -5 }}>
                   <ServiceImage src={service.gallery && service.gallery.length > 0 ? service.gallery[0] : 'https://via.placeholder.com/300x180.png/eee/ccc?text=Serviço'} alt={service.name} />
                   <ServiceInfo>
                     <h3>{service.name}</h3>
@@ -303,11 +331,11 @@ export default function BookingPage() {
               </>
             )}
             
-            {galleryImages.length > 0 && (
+            {businessGalleryImages.length > 0 && (
               <>
                 <h3>Nossa Galeria</h3>
                 <GalleryModalGrid>
-                  {galleryImages.map((image, index) => (
+                  {businessGalleryImages.map((image, index) => (
                     <GalleryImage
                       key={image.original}
                       src={image.thumbnail}
@@ -343,6 +371,30 @@ export default function BookingPage() {
           </DetailsContainer>
         )}
       </ContentWrapper>
+
+      {/* --- NEW: Service Gallery Modal --- */}
+      <AnimatePresence>
+        {isServiceGalleryOpen && (
+          <Modal isOpen={isServiceGalleryOpen} onClose={handleCloseServiceGallery} size="large">
+            <h2>Galeria de "{selectedService?.name}"</h2>
+            {serviceGalleryImages.length > 0 ? (
+              <ImageGallery
+                items={serviceGalleryImages}
+                showPlayButton={false}
+                showFullscreenButton={true}
+                useBrowserFullscreen={false}
+                showThumbnails={true}
+                showNav={true}
+              />
+            ) : (
+              <p>Este serviço ainda não tem fotos na galeria.</p>
+            )}
+            <ButtonGroup style={{ justifyContent: 'center', marginTop: '2rem' }}>
+              <Button className="primary" onClick={handleProceedToBooking}>Agendar Horário</Button>
+            </ButtonGroup>
+          </Modal>
+        )}
+      </AnimatePresence>
       
       <AnimatePresence>
         {isBookingModalOpen && (
@@ -472,7 +524,7 @@ export default function BookingPage() {
         {isLightboxOpen && (
           <Modal isOpen={isLightboxOpen} onClose={handleCloseLightbox} size="large">
             <ImageGallery
-              items={galleryImages}
+              items={businessGalleryImages}
               startIndex={lightboxStartIndex}
               showPlayButton={false}
               showFullscreenButton={true}
