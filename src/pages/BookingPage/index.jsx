@@ -25,6 +25,7 @@ import {
   ServiceCard,
   ServiceImage,
   ServiceInfo,
+  ServiceCardActions,
   TimeInfo,
   DetailsContainer,
   TimeSlotsGrid,
@@ -305,8 +306,8 @@ export default function BookingPage() {
             />
             <ServiceList>
               {filteredServices.map(service => (
-                <ServiceCard key={service.id} onClick={() => handleOpenServiceGallery(service)} whileHover={{ y: -5 }}>
-                  <ServiceImage src={service.gallery && service.gallery.length > 0 ? service.gallery[0] : 'https://via.placeholder.com/300x180.png/eee/ccc?text=Serviço'} alt={service.name} />
+                <ServiceCard key={service.id} whileHover={{ y: -5 }}>
+                  <ServiceImage src={service.gallery && service.gallery.length > 0 ? service.gallery[0] : 'https://via.placeholder.com/300x180.png/eee/ccc?text=Serviço'} alt={service.name} onClick={() => handleOpenServiceGallery(service)} />
                   <ServiceInfo>
                     <h3>{service.name}</h3>
                     <p>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(service.price)}</p>
@@ -314,6 +315,9 @@ export default function BookingPage() {
                       <FiClock />
                       <span>{service.duration}min</span>
                     </TimeInfo>
+                    <ServiceCardActions>
+                      <Button className="primary" onClick={() => handleOpenServiceGallery(service)}>Agendar Horário</Button>
+                    </ServiceCardActions>
                   </ServiceInfo>
                 </ServiceCard>
               ))}

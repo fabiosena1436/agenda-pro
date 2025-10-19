@@ -128,7 +128,6 @@ export const ServiceCard = styled(motion.div)`
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-  cursor: pointer;
   display: flex;
   flex-direction: column;
 `;
@@ -137,6 +136,7 @@ export const ServiceImage = styled.img`
   width: 100%;
   height: 180px;
   object-fit: cover;
+  cursor: pointer; /* Add cursor pointer here */
 `;
 
 export const ServiceInfo = styled.div`
@@ -155,6 +155,11 @@ export const ServiceInfo = styled.div`
     color: #666;
     flex-grow: 1;
   }
+`;
+
+export const ServiceCardActions = styled.div`
+  margin-top: 1.5rem;
+  display: flex;
 `;
 
 export const TimeInfo = styled.div`
